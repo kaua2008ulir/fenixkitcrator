@@ -1,198 +1,103 @@
+import { useMemo } from "react";
+import modSvgRaw from "@/assets/mod1.svg?raw";
 import type { JerseyDesign } from "@/lib/jersey-types";
 
 interface Props {
-  design: JerseyDesign;
-  view: "front" | "back";
+  design: Partial<JerseyDesign>;
+  view: "front" | "back" | "full";
   className?: string;
-  /** When true, render fonts inline so the SVG can be exported as PNG */
-  forExport?: boolean;
 }
 
+// Approximate viewBox crops inside the source artwork (viewBox 0 0 21000 29700)
+// The kit (jersey + shorts) lives in the top portion only.
+const VIEW_BOXES: Record<Props["view"], string> = {
+  front: "1300 6800 8400 11200",
+  back: "10800 6800 8400 11200",
+  full: "1000 6800 18200 11200",
+};
+
+function escapeXml(s: string) {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&apos;");
+}
+
+/**
+ * Renders the MOD_1 jersey + shorts artwork with user color/text/logo overrides.
+ * The original SVG fills are remapped via embedded <style> overrides, the
+ * viewBox is cropped to front/back/full, and an overlay layer is appended
+ * for sponsor, player name, number and uploaded logo.
+ */
 export function JerseyCanvas({ design, view, className }: Props) {
-  const { primary, secondary, accent, collar, sleeve, pattern, playerName, playerNumber, fontFamily, sponsor, logoDataUrl } = design;
-  const isBack = view === "back";
+  const {
+    bodyColor = "#ffffff",
+    trimColor = "#0a0a0a",
+    accentColor = "#ffffff",
+    playerName = "",
+    playerNumber = "",
+    fontFamily = "Teko",
+    sponsor = "",
+    logoDataUrl = null,
+  } = design;
 
-  // Pattern fills
-  const patternDef = (() => {
-    if (pattern === "stripes") {
-      return (
-        <pattern id="bodyPat" width="40" height="200" patternUnits="userSpaceOnUse">
-          <rect width="40" height="200" fill={primary} />
-          <rect x="20" width="20" height="200" fill={secondary} opacity="0.85" />
-        </pattern>
-      );
+  const svgString = useMemo(() => {
+    // Strip xml prolog + doctype + outer <svg> wrapper, keep inner content.
+    let inner = modSvgRaw
+      .replace(/<\?xml[^?]*\?>/g, "")
+      .replace(/<!DOCTYPE[\s\S]*?>/g, "")
+      .replace(/<svg[^>]*>/, "")
+      .replace(/<\/svg>\s*$/, "");
+
+    // Remap the embedded class fills so the artwork follows our palette.
+    inner = inner
+      .replace(/\.fil0\s*\{fill:#FEFEFE\}/g, `.fil0{fill:${bodyColor}}`)
+      .replace(/\.fil1\s*\{fill:#201E1E\}/g, `.fil1{fill:${trimColor}}`)
+      .replace(/\.fil9\s*\{fill:#FEFEFE;fill-opacity:0\.850980\}/g, `.fil9{fill:${bodyColor};fill-opacity:0.85}`)
+      .replace(/\.str0\s*\{stroke:#201E1E/g, `.str0{stroke:${trimColor}`)
+      .replace(/\.str2\s*\{stroke:#201E1E/g, `.str2{stroke:${trimColor}`)
+      .replace(/\.str4\s*\{stroke:#373435/g, `.str4{stroke:${trimColor}`);
+
+    const viewBox = VIEW_BOXES[view];
+
+    // Overlay coordinates are in the source artwork coordinate space.
+    const FRONT_CX = 5000;
+    const BACK_CX = 15000;
+
+    const overlay: string[] = [];
+
+    if (view !== "back") {
+      if (sponsor) {
+        overlay.push(
+          `<text x="${FRONT_CX}" y="12200" fill="${accentColor}" text-anchor="middle" font-family="${fontFamily}, Impact, sans-serif" font-weight="800" font-size="720" style="text-transform:uppercase;letter-spacing:40px">${escapeXml(sponsor)}</text>`,
+        );
+      }
+      if (logoDataUrl) {
+        overlay.push(
+          `<image href="${logoDataUrl}" x="3300" y="9400" width="1700" height="1700" preserveAspectRatio="xMidYMid meet"/>`,
+        );
+      }
     }
-    if (pattern === "halves") {
-      return (
-        <linearGradient id="bodyPat" x1="0" x2="1" y1="0" y2="0">
-          <stop offset="50%" stopColor={primary} />
-          <stop offset="50%" stopColor={secondary} />
-        </linearGradient>
-      );
+
+    if (view !== "front") {
+      if (playerName) {
+        overlay.push(
+          `<text x="${BACK_CX}" y="9300" fill="${accentColor}" text-anchor="middle" font-family="${fontFamily}, Impact, sans-serif" font-weight="800" font-size="780" style="text-transform:uppercase;letter-spacing:60px">${escapeXml(playerName)}</text>`,
+        );
+      }
+      if (playerNumber) {
+        overlay.push(
+          `<text x="${BACK_CX}" y="14200" fill="${accentColor}" text-anchor="middle" font-family="${fontFamily}, Impact, sans-serif" font-weight="800" font-size="3800" style="letter-spacing:-100px">${escapeXml(playerNumber)}</text>`,
+        );
+      }
     }
-    if (pattern === "diagonal") {
-      return (
-        <pattern id="bodyPat" width="60" height="60" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
-          <rect width="60" height="60" fill={primary} />
-          <rect width="30" height="60" fill={secondary} opacity="0.85" />
-        </pattern>
-      );
-    }
-    return (
-      <linearGradient id="bodyPat" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stopColor={primary} />
-        <stop offset="100%" stopColor={primary} />
-      </linearGradient>
-    );
-  })();
 
-  // Sleeve length
-  const sleeveBottom = sleeve === "long" ? 380 : 220;
+    return `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="${viewBox}" preserveAspectRatio="xMidYMid meet" style="width:100%;height:100%;display:block">${inner}${overlay.join("")}</svg>`;
+  }, [bodyColor, trimColor, accentColor, playerName, playerNumber, fontFamily, sponsor, logoDataUrl, view]);
 
-  // Collar shapes (front only)
-  const renderCollar = () => {
-    if (isBack) {
-      // simple back neckline
-      return <path d={`M 220 60 Q 250 80 280 60`} fill="none" stroke={accent} strokeWidth="6" />;
-    }
-    if (collar === "v") {
-      return <path d="M 215 55 L 250 130 L 285 55 Z" fill={primary} stroke={accent} strokeWidth="3" />;
-    }
-    if (collar === "polo") {
-      return (
-        <>
-          <path d="M 215 55 L 235 140 L 250 100 L 265 140 L 285 55 Z" fill={accent} />
-          <line x1="250" y1="100" x2="250" y2="160" stroke={primary} strokeWidth="4" />
-        </>
-      );
-    }
-    // crew
-    return <path d="M 210 55 Q 250 95 290 55" fill="none" stroke={accent} strokeWidth="10" />;
-  };
-
-  return (
-    <svg
-      viewBox="0 0 500 600"
-      className={className}
-      xmlns="http://www.w3.org/2000/svg"
-      preserveAspectRatio="xMidYMid meet"
-    >
-      <defs>
-        {patternDef}
-        <radialGradient id="shading" cx="50%" cy="40%" r="60%">
-          <stop offset="0%" stopColor="#fff" stopOpacity="0.12" />
-          <stop offset="100%" stopColor="#000" stopOpacity="0.4" />
-        </radialGradient>
-        <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
-          <feGaussianBlur stdDeviation="6" result="blur" />
-          <feMerge>
-            <feMergeNode in="blur" />
-            <feMergeNode in="SourceGraphic" />
-          </feMerge>
-        </filter>
-      </defs>
-
-      {/* Body shape */}
-      <g>
-        {/* Sleeves */}
-        <path
-          d={`M 110 130 L 60 ${sleeveBottom} L 130 ${sleeveBottom + 20} L 170 200 Z`}
-          fill={secondary}
-          stroke={accent}
-          strokeWidth="2"
-        />
-        <path
-          d={`M 390 130 L 440 ${sleeveBottom} L 370 ${sleeveBottom + 20} L 330 200 Z`}
-          fill={secondary}
-          stroke={accent}
-          strokeWidth="2"
-        />
-
-        {/* Torso */}
-        <path
-          d="M 170 90 Q 250 130 330 90 L 380 200 L 380 540 Q 250 570 120 540 L 120 200 Z"
-          fill="url(#bodyPat)"
-          stroke={accent}
-          strokeWidth="2"
-        />
-
-        {/* Subtle shading overlay */}
-        <path
-          d="M 170 90 Q 250 130 330 90 L 380 200 L 380 540 Q 250 570 120 540 L 120 200 Z"
-          fill="url(#shading)"
-        />
-
-        {/* Side accent stripes */}
-        <path d="M 122 200 L 132 540" stroke={accent} strokeWidth="3" opacity="0.7" />
-        <path d="M 378 200 L 368 540" stroke={accent} strokeWidth="3" opacity="0.7" />
-
-        {/* Collar */}
-        {renderCollar()}
-
-        {/* Sleeve cuffs */}
-        <rect x="58" y={sleeveBottom - 6} width="74" height="12" fill={accent} opacity="0.8" />
-        <rect x="368" y={sleeveBottom - 6} width="74" height="12" fill={accent} opacity="0.8" />
-
-        {/* Hem */}
-        <rect x="120" y="535" width="260" height="10" fill={accent} opacity="0.7" />
-      </g>
-
-      {/* Front: sponsor + logo. Back: name + number */}
-      {!isBack ? (
-        <g>
-          {sponsor && (
-            <text
-              x="250"
-              y="320"
-              fill={accent}
-              textAnchor="middle"
-              fontFamily={fontFamily}
-              fontWeight="700"
-              fontSize="34"
-              style={{ textTransform: "uppercase", letterSpacing: "0.05em" }}
-            >
-              {sponsor}
-            </text>
-          )}
-          {logoDataUrl && (
-            <image href={logoDataUrl} x="170" y="200" width="60" height="60" preserveAspectRatio="xMidYMid meet" />
-          )}
-        </g>
-      ) : (
-        <g>
-          {playerName && (
-            <text
-              x="250"
-              y="220"
-              fill={accent}
-              textAnchor="middle"
-              fontFamily={fontFamily}
-              fontWeight="700"
-              fontSize="38"
-              style={{ textTransform: "uppercase", letterSpacing: "0.08em" }}
-            >
-              {playerName}
-            </text>
-          )}
-          {playerNumber && (
-            <text
-              x="250"
-              y="430"
-              fill={accent}
-              textAnchor="middle"
-              fontFamily={fontFamily}
-              fontWeight="700"
-              fontSize="180"
-              style={{ letterSpacing: "-0.04em" }}
-              filter="url(#glow)"
-            >
-              {playerNumber}
-            </text>
-          )}
-        </g>
-      )}
-    </svg>
-  );
+  return <div className={className} dangerouslySetInnerHTML={{ __html: svgString }} />;
 }
 
 interface ShortsProps {
