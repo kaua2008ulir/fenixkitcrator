@@ -101,7 +101,7 @@ function DesignsPage() {
               <div key={d.id} className="group bg-concrete border border-zinc-900 hover:border-uv/40 transition-colors overflow-hidden">
                 <div className="aspect-[4/5] bg-asphalt grid-bg flex items-center justify-center p-4 relative overflow-hidden">
                   <div className="absolute inset-0 bg-uv/10 blur-[80px]" />
-                  <JerseyCanvas design={d.data} view="front" className="relative w-full h-full" />
+                  <JerseyCanvas design={(d.data ?? {}) as Partial<JerseyDesign>} view="front" className="relative w-full h-full flex items-center justify-center" />
                 </div>
                 <div className="p-4 border-t border-zinc-900">
                   <div className="flex items-start justify-between gap-2">
