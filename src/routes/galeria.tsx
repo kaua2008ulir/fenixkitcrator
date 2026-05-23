@@ -35,7 +35,7 @@ function GalleryPage() {
               >
                 <div className="aspect-[4/5] bg-asphalt grid-bg flex items-center justify-center p-6 relative overflow-hidden">
                   <div className="absolute inset-0 bg-uv/10 blur-[80px]" />
-                  <JerseyCanvas design={merged} view="front" className="relative w-full h-full drop-shadow-[0_20px_40px_rgba(208,0,255,0.2)]" />
+                  <JerseyCanvas design={merged} view="front" className="relative w-full h-full flex items-center justify-center drop-shadow-[0_20px_40px_rgba(208,0,255,0.2)]" />
                 </div>
                 <div className="p-5 border-t border-zinc-900 flex items-center justify-between">
                   <div>
@@ -45,9 +45,9 @@ function GalleryPage() {
                     <p className="text-[10px] uppercase tracking-widest text-zinc-600 mt-1">Open in editor →</p>
                   </div>
                   <div className="flex gap-1">
-                    <span className="size-4" style={{ background: merged.primary }} />
-                    <span className="size-4" style={{ background: merged.secondary }} />
-                    <span className="size-4" style={{ background: merged.accent }} />
+                    <span className="size-4" style={{ background: merged.bodyColor }} />
+                    <span className="size-4" style={{ background: merged.trimColor }} />
+                    <span className="size-4" style={{ background: merged.accentColor }} />
                   </div>
                 </div>
               </Link>
