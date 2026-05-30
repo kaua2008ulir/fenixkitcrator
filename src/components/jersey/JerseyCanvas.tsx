@@ -172,8 +172,9 @@ export function JerseyCanvas({ design, view, className }: Props) {
     }
 
     const viewBox = VIEW_BOXES[view];
+    const [vx, vy, vw, vh] = viewBox.split(" ").map(Number);
 
-    return `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="${viewBox}" preserveAspectRatio="xMidYMid meet" style="width:100%;height:100%;display:block"><defs>${pat.defs}</defs>${sleeves}${bodyBase}${bodyPatternLayer}${shorts}${collar}${overlay.join("")}</svg>`;
+    return `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="${viewBox}" preserveAspectRatio="xMidYMid meet" style="width:100%;height:100%;display:block"><defs>${pat.defs}<clipPath id="view-clip"><rect x="${vx}" y="${vy}" width="${vw}" height="${vh}"/></clipPath></defs><g clip-path="url(#view-clip)">${sleeves}${bodyBase}${bodyPatternLayer}${shorts}${collar}${overlay.join("")}</g></svg>`;
   }, [
     bodyColor,
     bodyPatternColor,
