@@ -46,7 +46,7 @@ function GalleryPage() {
                   </div>
                   <div className="flex gap-1">
                     <span className="size-4" style={{ background: merged.bodyColor }} />
-                    <span className="size-4" style={{ background: merged.trimColor }} />
+                    <span className="size-4" style={{ background: merged.collarTrim }} />
                     <span className="size-4" style={{ background: merged.accentColor }} />
                   </div>
                 </div>
