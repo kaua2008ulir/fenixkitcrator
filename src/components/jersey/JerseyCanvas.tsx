@@ -138,7 +138,6 @@ export function JerseyCanvas({ design, view, className }: Props) {
     // Overlay coordinates (source artwork space).
     const FRONT_CX = 4400;
     const BACK_CX = 13900;
-    const cx = view === "back" ? BACK_CX : FRONT_CX;
 
     const overlay: string[] = [];
     const fontStack = `${fontFamily}, Impact, sans-serif`;
