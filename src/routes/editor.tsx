@@ -2,13 +2,13 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useRef, useState } from "react";
 import { SiteHeader } from "@/components/SiteShell";
 import { JerseyCanvas } from "@/components/jersey/JerseyCanvas";
-import { DEFAULT_DESIGN, PRESETS, type JerseyDesign } from "@/lib/jersey-types";
+import { DEFAULT_DESIGN, PRESETS, type BodyPattern, type JerseyDesign } from "@/lib/jersey-types";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
-import { Download, Save, Upload, Palette, RotateCcw, Eye, ZoomIn, ZoomOut, Trash2 } from "lucide-react";
+import { Download, Save, Upload, Palette, RotateCcw, Eye, ZoomIn, ZoomOut, Trash2, Shirt } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
@@ -25,9 +25,18 @@ export const Route = createFileRoute("/editor")({
 
 const FONTS = ["Teko", "Manrope", "Impact", "Arial Black", "Georgia"];
 
+const PATTERNS: Array<{ value: BodyPattern; label: string }> = [
+  { value: "solid", label: "Liso" },
+  { value: "stripes-v", label: "Listras vert." },
+  { value: "stripes-h", label: "Listras horiz." },
+  { value: "sash", label: "Faixa diagonal" },
+  { value: "halves", label: "Metades" },
+  { value: "checks", label: "Xadrez" },
+];
+
 function EditorPage() {
   const [design, setDesign] = useState<JerseyDesign>(DEFAULT_DESIGN);
-  const [view, setView] = useState<"front" | "back" | "full">("full");
+  const [view, setView] = useState<"front" | "back" | "full">("front");
   const [zoom, setZoom] = useState(1);
   const [saving, setSaving] = useState(false);
   const [name, setName] = useState("Untitled Drop");
@@ -98,7 +107,7 @@ function EditorPage() {
         {/* Left controls */}
         <aside className="bg-asphalt p-5 lg:p-6 lg:max-h-[calc(100vh-4rem)] lg:overflow-y-auto">
           <div className="mb-6">
-            <p className="text-[10px] tracking-[0.3em] text-uv uppercase font-bold mb-2">[ Editor / MOD_01 ]</p>
+            <p className="text-[10px] tracking-[0.3em] text-uv uppercase font-bold mb-2">[ Editor / KIT_01 ]</p>
             <Input
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -119,7 +128,7 @@ function EditorPage() {
                   <div
                     className="aspect-square mb-2"
                     style={{
-                      background: `linear-gradient(135deg, ${p.design.bodyColor ?? "#000"} 50%, ${p.design.trimColor ?? "#fff"} 50%)`,
+                      background: `linear-gradient(135deg, ${p.design.bodyColor ?? "#000"} 50%, ${p.design.collarTrim ?? "#fff"} 50%)`,
                     }}
                   />
                   <div className="text-[10px] text-zinc-400 group-hover:text-uv uppercase tracking-widest text-center truncate">
@@ -130,37 +139,72 @@ function EditorPage() {
             </div>
           </Section>
 
-          <div className="space-y-5 mt-6">
-            <Section title="Cores" icon={Palette}>
+          <div className="space-y-6 mt-6">
+            <Section title="Corpo" icon={Shirt}>
               <div className="space-y-4">
-                <ColorRow label="Corpo" value={design.bodyColor} onChange={(v) => update("bodyColor", v)} />
-                <ColorRow label="Detalhes / gola" value={design.trimColor} onChange={(v) => update("trimColor", v)} />
+                <ColorRow label="Cor do corpo" value={design.bodyColor} onChange={(v) => update("bodyColor", v)} />
+                <Field label="Padrão">
+                  <Select value={design.bodyPattern} onValueChange={(v) => update("bodyPattern", v as BodyPattern)}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {PATTERNS.map((p) => <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </Field>
+                {design.bodyPattern !== "solid" && (
+                  <ColorRow label="Cor do padrão" value={design.bodyPatternColor} onChange={(v) => update("bodyPatternColor", v)} />
+                )}
+              </div>
+            </Section>
+
+            <Section title="Mangas" icon={Palette}>
+              <ColorRow label="Cor das mangas" value={design.sleeveColor} onChange={(v) => update("sleeveColor", v)} />
+            </Section>
+
+            <Section title="Gola" icon={Palette}>
+              <div className="space-y-4">
+                <ColorRow label="Base" value={design.collarColor} onChange={(v) => update("collarColor", v)} />
+                <ColorRow label="Detalhe" value={design.collarTrim} onChange={(v) => update("collarTrim", v)} />
+              </div>
+            </Section>
+
+            <Section title="Short" icon={Palette}>
+              <div className="space-y-4">
+                <ColorRow label="Cor do short" value={design.shortsColor} onChange={(v) => update("shortsColor", v)} />
+                <ColorRow label="Detalhe" value={design.shortsTrim} onChange={(v) => update("shortsTrim", v)} />
+              </div>
+            </Section>
+
+            <Section title="Acabamento" icon={Palette}>
+              <div className="space-y-4">
+                <ColorRow label="Costuras / contorno" value={design.outlineColor} onChange={(v) => update("outlineColor", v)} />
                 <ColorRow label="Nome & número" value={design.accentColor} onChange={(v) => update("accentColor", v)} />
               </div>
             </Section>
 
-            <Field label="Nome (costas)">
-              <Input value={design.playerName} onChange={(e) => update("playerName", e.target.value.toUpperCase().slice(0, 14))} />
-            </Field>
+            <Section title="Tipografia" icon={Palette}>
+              <div className="space-y-4">
+                <Field label="Nome (costas)">
+                  <Input value={design.playerName} onChange={(e) => update("playerName", e.target.value.toUpperCase().slice(0, 14))} />
+                </Field>
+                <Field label="Número">
+                  <Input value={design.playerNumber} onChange={(e) => update("playerNumber", e.target.value.replace(/\D/g, "").slice(0, 2))} />
+                </Field>
+                <Field label="Fonte">
+                  <Select value={design.fontFamily} onValueChange={(v) => update("fontFamily", v)}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {FONTS.map((f) => <SelectItem key={f} value={f}>{f}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </Field>
+                <Field label="Patrocinador (peito)">
+                  <Input value={design.sponsor} onChange={(e) => update("sponsor", e.target.value.toUpperCase().slice(0, 16))} />
+                </Field>
+              </div>
+            </Section>
 
-            <Field label="Número">
-              <Input value={design.playerNumber} onChange={(e) => update("playerNumber", e.target.value.replace(/\D/g, "").slice(0, 2))} />
-            </Field>
-
-            <Field label="Fonte">
-              <Select value={design.fontFamily} onValueChange={(v) => update("fontFamily", v)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {FONTS.map((f) => <SelectItem key={f} value={f}>{f}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </Field>
-
-            <Field label="Patrocinador (peito)">
-              <Input value={design.sponsor} onChange={(e) => update("sponsor", e.target.value.toUpperCase().slice(0, 16))} />
-            </Field>
-
-            <Field label="Logo (upload)">
+            <Section title="Logo" icon={Upload}>
               <div className="flex gap-2">
                 <label className="flex-1 cursor-pointer flex items-center justify-center gap-2 border border-dashed border-zinc-800 hover:border-uv/50 px-3 py-2 text-xs uppercase tracking-widest text-zinc-400 hover:text-uv transition-colors">
                   <Upload className="size-3.5" /> Enviar PNG/SVG
@@ -177,7 +221,7 @@ function EditorPage() {
                   </Button>
                 )}
               </div>
-            </Field>
+            </Section>
           </div>
 
           <div className="mt-8 grid grid-cols-2 gap-2">
@@ -202,7 +246,7 @@ function EditorPage() {
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 size-[600px] bg-uv/15 blur-[140px] rounded-full pointer-events-none" />
 
           <div className="absolute top-4 left-4 z-10 flex items-center gap-3 text-[10px] uppercase tracking-widest text-zinc-500 font-bold">
-            <span className="size-1.5 bg-uv rounded-full animate-pulse" /> Live preview — MOD_01
+            <span className="size-1.5 bg-uv rounded-full animate-pulse" /> Live preview — KIT_01
           </div>
           <div className="absolute top-4 right-4 z-10 flex gap-1 bg-asphalt/80 border border-zinc-800 backdrop-blur-md p-1">
             {(["front", "back", "full"] as const).map((v) => (
@@ -245,7 +289,7 @@ function EditorPage() {
 
 function Section({ title, icon: Icon, children }: { title: string; icon: React.ComponentType<{ className?: string }>; children: React.ReactNode }) {
   return (
-    <div className="mb-2">
+    <div>
       <div className="flex items-center gap-2 mb-3">
         <Icon className="size-3.5 text-uv" />
         <h3 className="text-[10px] uppercase tracking-[0.25em] text-zinc-400 font-bold">{title}</h3>
