@@ -119,14 +119,16 @@ export function JerseyCanvas({ design, view, className }: Props) {
   const svgString = useMemo(() => {
     const pat = patternDefs(bodyPattern, bodyPatternColor);
 
+    // Which body shapes to draw: front-only, back-only, or both (full kit).
+    const bodySources = view === "full" ? [frenteRaw, costaRaw] : view === "back" ? [costaRaw] : [frenteRaw];
+
     // Body: solid color underlay, then a pattern overlay clipped to the body shape.
-    const bodyBase = paintSimple(view === "back" ? costaRaw : frenteRaw, bodyColor, outlineColor);
+    const bodyBase = bodySources.map((src) => paintSimple(src, bodyColor, outlineColor)).join("");
     const bodyPatternLayer =
       pat.fill !== null
-        ? paintSimple(view === "back" ? costaRaw : frenteRaw, pat.fill, "none").replace(
-            /stroke-width="\d+"/g,
-            'stroke-width="0"',
-          )
+        ? bodySources
+            .map((src) => paintSimple(src, pat.fill as string, "none").replace(/stroke-width="\d+"/g, 'stroke-width="0"'))
+            .join("")
         : "";
 
     const sleeves = paintSimple(mangaRaw, sleeveColor, outlineColor);
