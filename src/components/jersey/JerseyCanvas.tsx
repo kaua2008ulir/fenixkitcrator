@@ -20,7 +20,7 @@ interface Props {
 const VIEW_BOXES: Record<Props["view"], string> = {
   front: "200 2300 9400 10900",
   back: "10600 2300 9400 10900",
-  full: "200 2300 9400 19200",
+  full: "200 2300 19600 19200",
 };
 
 const STROKE_W = 28;
