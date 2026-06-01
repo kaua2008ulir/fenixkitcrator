@@ -54,7 +54,10 @@ export const DEFAULT_DESIGN: JerseyDesign = {
   playerNumber: "10",
   fontFamily: "Teko",
   sponsor: "HYPE_CRAFT",
+  sponsorSleeve: "",
+  sponsorBack: "",
   logoDataUrl: null,
+  crestDataUrl: null,
 };
 
 export const PRESETS: Array<{ name: string; design: Partial<JerseyDesign> }> = [
