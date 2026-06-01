@@ -113,7 +113,10 @@ export function JerseyCanvas({ design, view, className }: Props) {
     playerNumber = "",
     fontFamily = "Teko",
     sponsor = "",
+    sponsorSleeve = "",
+    sponsorBack = "",
     logoDataUrl = null,
+    crestDataUrl = null,
   } = design;
 
   const svgString = useMemo(() => {
