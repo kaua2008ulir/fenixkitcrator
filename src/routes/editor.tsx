@@ -198,13 +198,24 @@ function EditorPage() {
                     </SelectContent>
                   </Select>
                 </Field>
-                <Field label="Patrocinador (peito)">
-                  <Input value={design.sponsor} onChange={(e) => update("sponsor", e.target.value.toUpperCase().slice(0, 16))} />
+              </div>
+            </Section>
+
+            <Section title="Patrocínios" icon={Palette}>
+              <div className="space-y-4">
+                <Field label="Barriga (peito)">
+                  <Input value={design.sponsor} onChange={(e) => update("sponsor", e.target.value.toUpperCase().slice(0, 16))} placeholder="Ex: HYPE_CRAFT" />
+                </Field>
+                <Field label="Manga">
+                  <Input value={design.sponsorSleeve} onChange={(e) => update("sponsorSleeve", e.target.value.toUpperCase().slice(0, 12))} placeholder="Ex: VOLT" />
+                </Field>
+                <Field label="Costas (parte de baixo)">
+                  <Input value={design.sponsorBack} onChange={(e) => update("sponsorBack", e.target.value.toUpperCase().slice(0, 16))} placeholder="Ex: STREET_CO" />
                 </Field>
               </div>
             </Section>
 
-            <Section title="Logo" icon={Upload}>
+            <Section title="Logo (peito esquerdo)" icon={Upload}>
               <div className="flex gap-2">
                 <label className="flex-1 cursor-pointer flex items-center justify-center gap-2 border border-dashed border-zinc-800 hover:border-uv/50 px-3 py-2 text-xs uppercase tracking-widest text-zinc-400 hover:text-uv transition-colors">
                   <Upload className="size-3.5" /> Enviar PNG/SVG
@@ -217,6 +228,25 @@ function EditorPage() {
                 </label>
                 {design.logoDataUrl && (
                   <Button size="icon" variant="ghost" onClick={() => update("logoDataUrl", null)}>
+                    <Trash2 className="size-4 text-zinc-400" />
+                  </Button>
+                )}
+              </div>
+            </Section>
+
+            <Section title="Escudo (peito direito)" icon={Upload}>
+              <div className="flex gap-2">
+                <label className="flex-1 cursor-pointer flex items-center justify-center gap-2 border border-dashed border-zinc-800 hover:border-uv/50 px-3 py-2 text-xs uppercase tracking-widest text-zinc-400 hover:text-uv transition-colors">
+                  <Upload className="size-3.5" /> Enviar escudo
+                  <input
+                    type="file"
+                    accept="image/png,image/svg+xml,image/jpeg"
+                    className="hidden"
+                    onChange={(e) => e.target.files?.[0] && handleCrest(e.target.files[0])}
+                  />
+                </label>
+                {design.crestDataUrl && (
+                  <Button size="icon" variant="ghost" onClick={() => update("crestDataUrl", null)}>
                     <Trash2 className="size-4 text-zinc-400" />
                   </Button>
                 )}
