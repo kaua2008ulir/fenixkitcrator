@@ -222,7 +222,10 @@ export function JerseyCanvas({ design, view, className }: Props) {
     playerNumber,
     fontFamily,
     sponsor,
+    sponsorSleeve,
+    sponsorBack,
     logoDataUrl,
+    crestDataUrl,
     view,
   ]);
 
