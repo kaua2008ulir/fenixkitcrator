@@ -138,38 +138,67 @@ export function JerseyCanvas({ design, view, className }: Props) {
     const collar = paintCollar(golaRaw, collarColor, collarTrim, outlineColor);
     const shorts = view === "full" ? paintSimple(shortRaw, shortsColor, shortsTrim) : "";
 
-    // Overlay coordinates (source artwork space).
-    const FRONT_CX = 4400;
-    const BACK_CX = 13900;
+    // Overlay coordinates (true geometric centers of each piece in source space).
+    const FRONT_CX = 5023;
+    const BACK_CX = 15430;
+    const SLEEVE_CX = 8340; // front right sleeve center
+    const BACK_SLEEVE_CX = 18700; // back right sleeve center
 
     const overlay: string[] = [];
     const fontStack = `${fontFamily}, Impact, sans-serif`;
 
     if (view !== "back") {
+      // Team logo on the left of the chest
       if (logoDataUrl) {
-        overlay.push(`<image href="${logoDataUrl}" x="2900" y="4400" width="1700" height="1700" preserveAspectRatio="xMidYMid meet"/>`);
+        overlay.push(`<image href="${logoDataUrl}" x="2650" y="3850" width="1500" height="1500" preserveAspectRatio="xMidYMid meet"/>`);
       }
-      if (sponsor) {
-        overlay.push(
-          `<text x="${FRONT_CX}" y="7600" fill="${accentColor}" text-anchor="middle" font-family="${fontStack}" font-weight="800" font-size="620" style="text-transform:uppercase;letter-spacing:30px">${escapeXml(sponsor)}</text>`,
-        );
+      // Escudo / crest on the other side of the chest
+      if (crestDataUrl) {
+        overlay.push(`<image href="${crestDataUrl}" x="5900" y="3850" width="1500" height="1500" preserveAspectRatio="xMidYMid meet"/>`);
       }
+      // Front number — centered
       if (playerNumber) {
         overlay.push(
-          `<text x="${FRONT_CX + 1300}" y="6400" fill="${accentColor}" text-anchor="middle" font-family="${fontStack}" font-weight="800" font-size="1100">${escapeXml(playerNumber)}</text>`,
+          `<text x="${FRONT_CX}" y="6700" fill="${accentColor}" text-anchor="middle" font-family="${fontStack}" font-weight="800" font-size="1100">${escapeXml(playerNumber)}</text>`,
+        );
+      }
+      // Main sponsor on the belly — centered
+      if (sponsor) {
+        overlay.push(
+          `<text x="${FRONT_CX}" y="9400" fill="${accentColor}" text-anchor="middle" font-family="${fontStack}" font-weight="800" font-size="640" style="text-transform:uppercase;letter-spacing:30px">${escapeXml(sponsor)}</text>`,
+        );
+      }
+      // Sleeve sponsor — centered on the front sleeve
+      if (sponsorSleeve) {
+        overlay.push(
+          `<text x="${SLEEVE_CX}" y="5400" fill="${accentColor}" text-anchor="middle" font-family="${fontStack}" font-weight="800" font-size="320" style="text-transform:uppercase;letter-spacing:8px">${escapeXml(sponsorSleeve)}</text>`,
         );
       }
     }
 
     if (view !== "front") {
+      // Player name — centered
       if (playerName) {
         overlay.push(
           `<text x="${BACK_CX}" y="4700" fill="${accentColor}" text-anchor="middle" font-family="${fontStack}" font-weight="800" font-size="780" style="text-transform:uppercase;letter-spacing:50px">${escapeXml(playerName)}</text>`,
         );
       }
+      // Back number — centered
       if (playerNumber) {
         overlay.push(
           `<text x="${BACK_CX}" y="9300" fill="${accentColor}" text-anchor="middle" font-family="${fontStack}" font-weight="800" font-size="3600" style="letter-spacing:-80px">${escapeXml(playerNumber)}</text>`,
+        );
+      }
+      // Sponsor on the lower back — centered
+      if (sponsorBack) {
+        overlay.push(
+          `<text x="${BACK_CX}" y="11900" fill="${accentColor}" text-anchor="middle" font-family="${fontStack}" font-weight="800" font-size="560" style="text-transform:uppercase;letter-spacing:24px">${escapeXml(sponsorBack)}</text>`,
+        );
+      }
+      // Sleeve sponsor — centered on the back sleeve
+      if (sponsorSleeve) {
+        overlay.push(
+          `<text x="${BACK_SLEEVE_CX}" y="5400" fill="${accentColor}" text-anchor="middle" font-family="${fontStack}" font-weight="800" font-size="320" style="text-transform:uppercase;letter-spacing:8px">${escapeXml(sponsorSleeve)}</text>`,
         );
       }
     }
