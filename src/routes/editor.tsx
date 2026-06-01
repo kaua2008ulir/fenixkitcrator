@@ -54,6 +54,12 @@ function EditorPage() {
     reader.readAsDataURL(file);
   };
 
+  const handleCrest = (file: File) => {
+    const reader = new FileReader();
+    reader.onload = () => update("crestDataUrl", reader.result as string);
+    reader.readAsDataURL(file);
+  };
+
   const exportPNG = async () => {
     const svg = svgWrapRef.current?.querySelector("svg");
     if (!svg) return;
