@@ -27,10 +27,16 @@ export interface JerseyDesign {
   playerNumber: string;
   /** Font used for name + number + sponsor */
   fontFamily: string;
-  /** Sponsor text printed on the chest */
+  /** Main sponsor text printed on the belly (front) */
   sponsor: string;
-  /** Uploaded logo (data URL) shown on the chest */
+  /** Sponsor text printed on the sleeve */
+  sponsorSleeve: string;
+  /** Sponsor text printed on the lower back */
+  sponsorBack: string;
+  /** Uploaded team logo (data URL) shown on one side of the chest */
   logoDataUrl: string | null;
+  /** Uploaded crest / escudo (data URL) shown on the other side of the chest */
+  crestDataUrl: string | null;
 }
 
 export const DEFAULT_DESIGN: JerseyDesign = {
@@ -48,7 +54,10 @@ export const DEFAULT_DESIGN: JerseyDesign = {
   playerNumber: "10",
   fontFamily: "Teko",
   sponsor: "HYPE_CRAFT",
+  sponsorSleeve: "",
+  sponsorBack: "",
   logoDataUrl: null,
+  crestDataUrl: null,
 };
 
 export const PRESETS: Array<{ name: string; design: Partial<JerseyDesign> }> = [
