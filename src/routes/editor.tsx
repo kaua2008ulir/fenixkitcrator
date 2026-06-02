@@ -2,13 +2,24 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useRef, useState } from "react";
 import { SiteHeader } from "@/components/SiteShell";
 import { JerseyCanvas } from "@/components/jersey/JerseyCanvas";
-import { DEFAULT_DESIGN, PRESETS, type BodyPattern, type JerseyDesign } from "@/lib/jersey-types";
+import {
+  DEFAULT_DESIGN,
+  PRESETS,
+  NUMBER_PLACEMENTS,
+  SPONSOR_POSITIONS,
+  type BodyPattern,
+  type JerseyDesign,
+  type NumberPlacement,
+  type SponsorItem,
+  type SponsorPosition,
+} from "@/lib/jersey-types";
+import { STAMPS } from "@/lib/stamps";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
-import { Download, Save, Upload, Palette, RotateCcw, Eye, ZoomIn, ZoomOut, Trash2, Shirt } from "lucide-react";
+import { Download, Save, Upload, Palette, RotateCcw, Eye, ZoomIn, ZoomOut, Trash2, Shirt, Plus, Layers, Hash } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
