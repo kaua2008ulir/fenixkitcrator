@@ -19,7 +19,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
-import { Download, Save, Upload, Palette, RotateCcw, Eye, ZoomIn, ZoomOut, Trash2, Shirt, Plus, Layers, Hash } from "lucide-react";
+import { Download, Save, Upload, Palette, RotateCcw, Eye, ZoomIn, ZoomOut, Trash2, Shirt, Plus, Layers } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
