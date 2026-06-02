@@ -231,6 +231,14 @@ function EditorPage() {
                 <Field label="Número">
                   <Input value={design.playerNumber} onChange={(e) => update("playerNumber", e.target.value.replace(/\D/g, "").slice(0, 2))} />
                 </Field>
+                <Field label="Onde imprimir o número">
+                  <Select value={design.numberPlacement} onValueChange={(v) => update("numberPlacement", v as NumberPlacement)}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {NUMBER_PLACEMENTS.map((n) => <SelectItem key={n.value} value={n.value}>{n.label}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </Field>
                 <Field label="Fonte">
                   <Select value={design.fontFamily} onValueChange={(v) => update("fontFamily", v)}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
