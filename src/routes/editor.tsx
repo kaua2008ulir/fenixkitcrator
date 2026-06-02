@@ -283,7 +283,10 @@ function EditorPage() {
               </div>
             </Section>
 
-            <Section title="Escudo (peito direito)" icon={Upload}>
+            <Section title="Escudo (aplicado automaticamente)" icon={Upload}>
+              <p className="text-[10px] text-zinc-500 mb-3 leading-relaxed">
+                Ao enviar o escudo ele entra sozinho no peito direito e no short.
+              </p>
               <div className="flex gap-2">
                 <label className="flex-1 cursor-pointer flex items-center justify-center gap-2 border border-dashed border-zinc-800 hover:border-uv/50 px-3 py-2 text-xs uppercase tracking-widest text-zinc-400 hover:text-uv transition-colors">
                   <Upload className="size-3.5" /> Enviar escudo
@@ -299,6 +302,71 @@ function EditorPage() {
                     <Trash2 className="size-4 text-zinc-400" />
                   </Button>
                 )}
+              </div>
+            </Section>
+
+            <Section title="Estampas" icon={Layers}>
+              <div className="grid grid-cols-3 gap-2">
+                <button
+                  type="button"
+                  onClick={() => update("stampId", null)}
+                  className={`border p-2 text-[10px] uppercase tracking-widest aspect-square flex items-center justify-center text-center transition-colors ${design.stampId == null ? "border-uv text-uv" : "border-zinc-800 text-zinc-400 hover:border-uv/50"}`}
+                >
+                  Nenhuma
+                </button>
+                {STAMPS.map((s) => (
+                  <button
+                    key={s.id}
+                    type="button"
+                    onClick={() => update("stampId", s.id)}
+                    className={`border p-1 aspect-square overflow-hidden transition-colors ${design.stampId === s.id ? "border-uv" : "border-zinc-800 hover:border-uv/50"}`}
+                    title={s.name}
+                  >
+                    <div
+                      className="w-full h-full text-uv"
+                      dangerouslySetInnerHTML={{ __html: s.svg }}
+                    />
+                  </button>
+                ))}
+              </div>
+              {STAMPS.length === 0 && (
+                <p className="text-[10px] text-zinc-600 mt-2">Nenhuma estampa cadastrada ainda.</p>
+              )}
+            </Section>
+
+            <Section title="Patrocínios (imagens)" icon={Plus}>
+              <p className="text-[10px] text-zinc-500 mb-3 leading-relaxed">
+                Envie quantos patrocínios quiser e escolha o lugar de cada um.
+              </p>
+              <div className="space-y-3">
+                {(design.sponsors ?? []).map((s) => (
+                  <div key={s.id} className="flex items-center gap-2 border border-zinc-800 p-2">
+                    <div className="size-10 shrink-0 bg-concrete border border-zinc-800 overflow-hidden flex items-center justify-center">
+                      <img src={s.imageDataUrl} alt="patrocínio" className="max-w-full max-h-full object-contain" />
+                    </div>
+                    <Select value={s.position} onValueChange={(v) => updateSponsor(s.id, v as SponsorPosition)}>
+                      <SelectTrigger className="flex-1 h-8 text-xs"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {SPONSOR_POSITIONS.map((p) => <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                    <Button size="icon" variant="ghost" onClick={() => removeSponsor(s.id)}>
+                      <Trash2 className="size-4 text-zinc-400" />
+                    </Button>
+                  </div>
+                ))}
+                <label className="cursor-pointer flex items-center justify-center gap-2 border border-dashed border-zinc-800 hover:border-uv/50 px-3 py-2 text-xs uppercase tracking-widest text-zinc-400 hover:text-uv transition-colors">
+                  <Plus className="size-3.5" /> Adicionar patrocínio
+                  <input
+                    type="file"
+                    accept="image/png,image/svg+xml,image/jpeg"
+                    className="hidden"
+                    onChange={(e) => {
+                      if (e.target.files?.[0]) addSponsor(e.target.files[0]);
+                      e.target.value = "";
+                    }}
+                  />
+                </label>
               </div>
             </Section>
           </div>
