@@ -71,6 +71,30 @@ function EditorPage() {
     reader.readAsDataURL(file);
   };
 
+  const addSponsor = (file: File) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const item: SponsorItem = {
+        id: crypto.randomUUID(),
+        imageDataUrl: reader.result as string,
+        position: "belly",
+      };
+      setDesign((d) => ({ ...d, sponsors: [...(d.sponsors ?? []), item] }));
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const updateSponsor = (id: string, position: SponsorPosition) =>
+    setDesign((d) => ({
+      ...d,
+      sponsors: (d.sponsors ?? []).map((s) => (s.id === id ? { ...s, position } : s)),
+    }));
+
+  const removeSponsor = (id: string) =>
+    setDesign((d) => ({ ...d, sponsors: (d.sponsors ?? []).filter((s) => s.id !== id) }));
+
+
+
   const exportPNG = async () => {
     const svg = svgWrapRef.current?.querySelector("svg");
     if (!svg) return;
