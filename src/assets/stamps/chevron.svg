@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 280" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <pattern id="ch" width="200" height="60" patternUnits="userSpaceOnUse">
+      <path d="M0 0 L100 36 L200 0 L200 18 L100 54 L0 18 Z" fill="currentColor" fill-opacity="0.85"/>
+    </pattern>
+  </defs>
+  <rect width="200" height="280" fill="url(#ch)"/>
+</svg>

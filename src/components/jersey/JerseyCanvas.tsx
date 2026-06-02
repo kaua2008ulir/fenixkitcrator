@@ -4,7 +4,8 @@ import costaRaw from "@/assets/kit/costa.svg?raw";
 import mangaRaw from "@/assets/kit/manga.svg?raw";
 import golaRaw from "@/assets/kit/gola.svg?raw";
 import shortRaw from "@/assets/kit/short.svg?raw";
-import type { BodyPattern, JerseyDesign } from "@/lib/jersey-types";
+import type { BodyPattern, JerseyDesign, SponsorPosition } from "@/lib/jersey-types";
+import { getStamp } from "@/lib/stamps";
 
 interface Props {
   design: Partial<JerseyDesign>;
@@ -25,6 +26,14 @@ const VIEW_BOXES: Record<Props["view"], string> = {
 
 const STROKE_W = 28;
 
+/** Geometric bounding boxes (computed from the source paths). */
+const FRONT_BODY = { x: 1969, y: 2874, w: 6108, h: 9849, cx: 5023 };
+const BACK_BODY = { x: 12393, y: 2891, w: 6073, h: 9959, cx: 15430 };
+const FRONT_SHORT = { cx: 5355, cy: 14917 };
+const BACK_SHORT = { cx: 15461, cy: 14767 };
+const SLEEVE_CX = 8340;
+const BACK_SLEEVE_CX = 18700;
+
 function escapeXml(s: string) {
   return s
     .replace(/&/g, "&amp;")
@@ -42,6 +51,12 @@ function innerOf(raw: string) {
     .replace(/<svg[^>]*>/, "")
     .replace(/<\/svg>\s*$/, "")
     .replace(/<style[\s\S]*?<\/style>/g, "");
+}
+
+/** Extract the main body path `d` so we can clip patterns / stamps to the shape. */
+function bodyPathD(raw: string) {
+  const m = raw.match(/\sd="([^"]+)"/);
+  return m ? m[1] : "";
 }
 
 /** Re-color a simple piece (body / sleeve / short) that only uses .fil0 + .str0. */
@@ -88,7 +103,6 @@ function patternDefs(pattern: BodyPattern, color: string): { defs: string; fill:
       };
     case "halves":
       return {
-        // left half tinted via a wide gradient with a hard stop at 50%
         defs: `<linearGradient id="kit-pat" x1="0" y1="0" x2="1" y2="0"><stop offset="0.5" stop-color="${color}"/><stop offset="0.5" stop-color="transparent"/></linearGradient>`,
         fill: "url(#kit-pat)",
       };
@@ -96,6 +110,20 @@ function patternDefs(pattern: BodyPattern, color: string): { defs: string; fill:
       return { defs: "", fill: null };
   }
 }
+
+/** Centered <image> helper. */
+function imgEl(href: string, cx: number, cy: number, w: number, h: number) {
+  return `<image href="${href}" x="${cx - w / 2}" y="${cy - h / 2}" width="${w}" height="${h}" preserveAspectRatio="xMidYMid meet"/>`;
+}
+
+/** Placement boxes for image sponsors (cx, cy, w, h) + which view group renders it. */
+const SPONSOR_BOX: Record<SponsorPosition, { cx: number; cy: number; w: number; h: number; group: "front" | "back" | "full" }> = {
+  belly: { cx: FRONT_BODY.cx, cy: 9000, w: 3800, h: 1700, group: "front" },
+  sleeve: { cx: SLEEVE_CX, cy: 5000, w: 1600, h: 1100, group: "front" },
+  "back-top": { cx: BACK_BODY.cx, cy: 3700, w: 3400, h: 1500, group: "back" },
+  "back-bottom": { cx: BACK_BODY.cx, cy: 10800, w: 2900, h: 1500, group: "back" },
+  "shorts-back": { cx: BACK_SHORT.cx, cy: 15400, w: 1700, h: 1700, group: "full" },
+};
 
 export function JerseyCanvas({ design, view, className }: Props) {
   const {
@@ -111,102 +139,143 @@ export function JerseyCanvas({ design, view, className }: Props) {
     accentColor = "#ffffff",
     playerName = "",
     playerNumber = "",
+    numberPlacement = "back",
     fontFamily = "Teko",
     sponsor = "",
     sponsorSleeve = "",
     sponsorBack = "",
+    sponsors = [],
+    stampId = null,
     logoDataUrl = null,
     crestDataUrl = null,
   } = design;
 
   const svgString = useMemo(() => {
     const pat = patternDefs(bodyPattern, bodyPatternColor);
+    const stamp = getStamp(stampId);
 
     // Which body shapes to draw: front-only, back-only, or both (full kit).
     const bodySources = view === "full" ? [frenteRaw, costaRaw] : view === "back" ? [costaRaw] : [frenteRaw];
 
-    // Body: solid color underlay, then a pattern overlay clipped to the body shape.
     const bodyBase = bodySources.map((src) => paintSimple(src, bodyColor, outlineColor)).join("");
+    const bodyClipPaths = bodySources.map((src) => `<path d="${bodyPathD(src)}"/>`).join("");
+
     const bodyPatternLayer =
       pat.fill !== null
-        ? bodySources
+        ? `<g clip-path="url(#body-clip)">${bodySources
             .map((src) => paintSimple(src, pat.fill as string, "none").replace(/stroke-width="\d+"/g, 'stroke-width="0"'))
-            .join("")
+            .join("")}</g>`
         : "";
+
+    // Stamp / print overlay clipped to the body shape.
+    let stampLayer = "";
+    if (stamp) {
+      const href = `data:image/svg+xml;utf8,${encodeURIComponent(stamp.svg)}`;
+      const boxes = view === "full" ? [FRONT_BODY, BACK_BODY] : view === "back" ? [BACK_BODY] : [FRONT_BODY];
+      stampLayer = `<g clip-path="url(#body-clip)">${boxes
+        .map((b) => `<image href="${href}" x="${b.x}" y="${b.y}" width="${b.w}" height="${b.h}" preserveAspectRatio="xMidYMid slice"/>`)
+        .join("")}</g>`;
+    }
 
     const sleeves = paintSimple(mangaRaw, sleeveColor, outlineColor);
     const collar = paintCollar(golaRaw, collarColor, collarTrim, outlineColor);
     const shorts = view === "full" ? paintSimple(shortRaw, shortsColor, shortsTrim) : "";
 
-    // Overlay coordinates (true geometric centers of each piece in source space).
-    const FRONT_CX = 5023;
-    const BACK_CX = 15430;
-    const SLEEVE_CX = 8340; // front right sleeve center
-    const BACK_SLEEVE_CX = 18700; // back right sleeve center
-
     const overlay: string[] = [];
     const fontStack = `${fontFamily}, Impact, sans-serif`;
+
+    const showFrontNumber = numberPlacement === "back-front" || numberPlacement === "back-front-shorts";
+    const showShortsNumber = numberPlacement === "back-front-shorts";
+
+    // ── Image sponsors ─────────────────────────────────────────────
+    const renderSponsors = (group: "front" | "back" | "full") =>
+      sponsors
+        .filter((s) => s.imageDataUrl && SPONSOR_BOX[s.position].group === group)
+        .forEach((s) => {
+          const b = SPONSOR_BOX[s.position];
+          overlay.push(imgEl(s.imageDataUrl, b.cx, b.cy, b.w, b.h));
+          // sleeve sponsor mirrors onto the back sleeve when both are visible
+          if (s.position === "sleeve" && view !== "front") {
+            overlay.push(imgEl(s.imageDataUrl, BACK_SLEEVE_CX, b.cy, b.w, b.h));
+          }
+        });
 
     if (view !== "back") {
       // Team logo on the left of the chest
       if (logoDataUrl) {
-        overlay.push(`<image href="${logoDataUrl}" x="2650" y="3850" width="1500" height="1500" preserveAspectRatio="xMidYMid meet"/>`);
+        overlay.push(imgEl(logoDataUrl, 3450, 4600, 1500, 1500));
       }
-      // Escudo / crest on the other side of the chest
+      // Escudo / crest auto-placed on the right of the chest
       if (crestDataUrl) {
-        overlay.push(`<image href="${crestDataUrl}" x="5900" y="3850" width="1500" height="1500" preserveAspectRatio="xMidYMid meet"/>`);
+        overlay.push(imgEl(crestDataUrl, 6550, 4600, 1500, 1500));
       }
-      // Front number — centered
-      if (playerNumber) {
+      // Front number — centered on the chest
+      if (playerNumber && showFrontNumber) {
         overlay.push(
-          `<text x="${FRONT_CX}" y="6700" fill="${accentColor}" text-anchor="middle" font-family="${fontStack}" font-weight="800" font-size="1100">${escapeXml(playerNumber)}</text>`,
+          `<text x="${FRONT_BODY.cx}" y="6700" fill="${accentColor}" text-anchor="middle" font-family="${fontStack}" font-weight="800" font-size="1100">${escapeXml(playerNumber)}</text>`,
         );
       }
-      // Main sponsor on the belly — centered
+      // Main sponsor text on the belly — centered
       if (sponsor) {
         overlay.push(
-          `<text x="${FRONT_CX}" y="9400" fill="${accentColor}" text-anchor="middle" font-family="${fontStack}" font-weight="800" font-size="640" style="text-transform:uppercase;letter-spacing:30px">${escapeXml(sponsor)}</text>`,
+          `<text x="${FRONT_BODY.cx}" y="9700" fill="${accentColor}" text-anchor="middle" font-family="${fontStack}" font-weight="800" font-size="640" style="text-transform:uppercase;letter-spacing:30px">${escapeXml(sponsor)}</text>`,
         );
       }
-      // Sleeve sponsor — centered on the front sleeve
+      // Sleeve sponsor text — centered on the front sleeve
       if (sponsorSleeve) {
         overlay.push(
           `<text x="${SLEEVE_CX}" y="5400" fill="${accentColor}" text-anchor="middle" font-family="${fontStack}" font-weight="800" font-size="320" style="text-transform:uppercase;letter-spacing:8px">${escapeXml(sponsorSleeve)}</text>`,
         );
       }
+      renderSponsors("front");
     }
 
     if (view !== "front") {
-      // Player name — centered
+      // Player name — centered, just under the collar
       if (playerName) {
         overlay.push(
-          `<text x="${BACK_CX}" y="4700" fill="${accentColor}" text-anchor="middle" font-family="${fontStack}" font-weight="800" font-size="780" style="text-transform:uppercase;letter-spacing:50px">${escapeXml(playerName)}</text>`,
+          `<text x="${BACK_BODY.cx}" y="4900" fill="${accentColor}" text-anchor="middle" font-family="${fontStack}" font-weight="800" font-size="780" style="text-transform:uppercase;letter-spacing:50px">${escapeXml(playerName)}</text>`,
         );
       }
-      // Back number — centered
+      // Back number — big, centered
       if (playerNumber) {
         overlay.push(
-          `<text x="${BACK_CX}" y="9300" fill="${accentColor}" text-anchor="middle" font-family="${fontStack}" font-weight="800" font-size="3600" style="letter-spacing:-80px">${escapeXml(playerNumber)}</text>`,
+          `<text x="${BACK_BODY.cx}" y="8700" fill="${accentColor}" text-anchor="middle" font-family="${fontStack}" font-weight="800" font-size="3600" style="letter-spacing:-80px">${escapeXml(playerNumber)}</text>`,
         );
       }
-      // Sponsor on the lower back — centered
+      // Sponsor text on the lower back — centered
       if (sponsorBack) {
         overlay.push(
-          `<text x="${BACK_CX}" y="11900" fill="${accentColor}" text-anchor="middle" font-family="${fontStack}" font-weight="800" font-size="560" style="text-transform:uppercase;letter-spacing:24px">${escapeXml(sponsorBack)}</text>`,
+          `<text x="${BACK_BODY.cx}" y="11400" fill="${accentColor}" text-anchor="middle" font-family="${fontStack}" font-weight="800" font-size="560" style="text-transform:uppercase;letter-spacing:24px">${escapeXml(sponsorBack)}</text>`,
         );
       }
-      // Sleeve sponsor — centered on the back sleeve
+      // Sleeve sponsor text — centered on the back sleeve
       if (sponsorSleeve) {
         overlay.push(
           `<text x="${BACK_SLEEVE_CX}" y="5400" fill="${accentColor}" text-anchor="middle" font-family="${fontStack}" font-weight="800" font-size="320" style="text-transform:uppercase;letter-spacing:8px">${escapeXml(sponsorSleeve)}</text>`,
         );
       }
+      renderSponsors("back");
+    }
+
+    if (view === "full") {
+      // Auto crest on the front shorts (left leg)
+      if (crestDataUrl) {
+        overlay.push(imgEl(crestDataUrl, FRONT_SHORT.cx - 1300, 16400, 1200, 1200));
+      }
+      // Shorts number (left leg) when enabled
+      if (playerNumber && showShortsNumber) {
+        overlay.push(
+          `<text x="${FRONT_SHORT.cx - 1300}" y="15200" fill="${accentColor}" text-anchor="middle" font-family="${fontStack}" font-weight="800" font-size="1100">${escapeXml(playerNumber)}</text>`,
+        );
+      }
+      renderSponsors("full");
     }
 
     const viewBox = VIEW_BOXES[view];
     const [vx, vy, vw, vh] = viewBox.split(" ").map(Number);
 
-    return `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="${viewBox}" preserveAspectRatio="xMidYMid meet" style="width:100%;height:100%;display:block"><defs>${pat.defs}<clipPath id="view-clip"><rect x="${vx}" y="${vy}" width="${vw}" height="${vh}"/></clipPath></defs><g clip-path="url(#view-clip)">${sleeves}${bodyBase}${bodyPatternLayer}${shorts}${collar}${overlay.join("")}</g></svg>`;
+    return `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="${viewBox}" preserveAspectRatio="xMidYMid meet" style="width:100%;height:100%;display:block"><defs>${pat.defs}<clipPath id="view-clip"><rect x="${vx}" y="${vy}" width="${vw}" height="${vh}"/></clipPath><clipPath id="body-clip">${bodyClipPaths}</clipPath></defs><g clip-path="url(#view-clip)">${sleeves}${bodyBase}${bodyPatternLayer}${stampLayer}${shorts}${collar}${overlay.join("")}</g></svg>`;
   }, [
     bodyColor,
     bodyPatternColor,
@@ -220,10 +289,13 @@ export function JerseyCanvas({ design, view, className }: Props) {
     accentColor,
     playerName,
     playerNumber,
+    numberPlacement,
     fontFamily,
     sponsor,
     sponsorSleeve,
     sponsorBack,
+    sponsors,
+    stampId,
     logoDataUrl,
     crestDataUrl,
     view,
