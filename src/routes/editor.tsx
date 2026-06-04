@@ -504,11 +504,15 @@ function EditorPage() {
               className="w-full h-full flex items-center justify-center"
               style={{ transform: `scale(${zoom})`, transition: "transform 0.2s" }}
             >
-              <JerseyCanvas
-                design={design}
-                view={view}
-                className="w-full h-full max-h-full flex items-center justify-center drop-shadow-[0_30px_50px_rgba(208,0,255,0.25)]"
-              />
+              <div className="relative w-full h-full flex items-center justify-center">
+                <JerseyCanvas
+                  design={design}
+                  view={view}
+                  className="w-full h-full max-h-full flex items-center justify-center drop-shadow-[0_30px_50px_rgba(208,0,255,0.25)]"
+                />
+                <SponsorDragLayer design={design} view={view} onMove={moveSponsor} />
+              </div>
+
             </div>
           </div>
         </section>
