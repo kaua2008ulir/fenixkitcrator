@@ -394,23 +394,47 @@ function EditorPage() {
 
             <Section title="Patrocínios (imagens)" icon={Plus}>
               <p className="text-[10px] text-zinc-500 mb-3 leading-relaxed">
-                Envie quantos patrocínios quiser e escolha o lugar de cada um.
+                Envie quantos patrocínios quiser, escolha o lugar, ajuste o tamanho e
+                <span className="text-uv"> arraste direto na camisa</span> pra posicionar.
               </p>
               <div className="space-y-3">
                 {(design.sponsors ?? []).map((s) => (
-                  <div key={s.id} className="flex items-center gap-2 border border-zinc-800 p-2">
-                    <div className="size-10 shrink-0 bg-concrete border border-zinc-800 overflow-hidden flex items-center justify-center">
-                      <img src={s.imageDataUrl} alt="patrocínio" className="max-w-full max-h-full object-contain" />
+                  <div key={s.id} className="space-y-2 border border-zinc-800 p-2">
+                    <div className="flex items-center gap-2">
+                      <div className="size-10 shrink-0 bg-concrete border border-zinc-800 overflow-hidden flex items-center justify-center">
+                        <img src={s.imageDataUrl} alt="patrocínio" className="max-w-full max-h-full object-contain" />
+                      </div>
+                      <Select value={s.position} onValueChange={(v) => updateSponsor(s.id, v as SponsorPosition)}>
+                        <SelectTrigger className="flex-1 h-8 text-xs"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {SPONSOR_POSITIONS.map((p) => <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                      <Button size="icon" variant="ghost" onClick={() => removeSponsor(s.id)}>
+                        <Trash2 className="size-4 text-zinc-400" />
+                      </Button>
                     </div>
-                    <Select value={s.position} onValueChange={(v) => updateSponsor(s.id, v as SponsorPosition)}>
-                      <SelectTrigger className="flex-1 h-8 text-xs"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        {SPONSOR_POSITIONS.map((p) => <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
-                    <Button size="icon" variant="ghost" onClick={() => removeSponsor(s.id)}>
-                      <Trash2 className="size-4 text-zinc-400" />
-                    </Button>
+                    <div className="flex items-center gap-2">
+                      <Label className="text-[9px] uppercase tracking-widest text-zinc-500 font-bold w-14">Tamanho</Label>
+                      <Slider
+                        value={[s.scale ?? 1]}
+                        min={0.4}
+                        max={2.5}
+                        step={0.05}
+                        onValueChange={(v) => patchSponsor(s.id, { scale: v[0] })}
+                        className="flex-1"
+                      />
+                      <span className="text-[10px] text-zinc-500 tabular-nums w-8">{Math.round((s.scale ?? 1) * 100)}%</span>
+                    </div>
+                    {((s.dx ?? 0) !== 0 || (s.dy ?? 0) !== 0) && (
+                      <button
+                        type="button"
+                        onClick={() => patchSponsor(s.id, { dx: 0, dy: 0 })}
+                        className="text-[9px] uppercase tracking-widest text-zinc-500 hover:text-uv"
+                      >
+                        ↺ Recentralizar posição
+                      </button>
+                    )}
                   </div>
                 ))}
                 <label className="cursor-pointer flex items-center justify-center gap-2 border border-dashed border-zinc-800 hover:border-uv/50 px-3 py-2 text-xs uppercase tracking-widest text-zinc-400 hover:text-uv transition-colors">
@@ -427,6 +451,7 @@ function EditorPage() {
                 </label>
               </div>
             </Section>
+
           </div>
 
           <div className="mt-8 grid grid-cols-2 gap-2">
