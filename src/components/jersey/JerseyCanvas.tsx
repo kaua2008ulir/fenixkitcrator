@@ -4,7 +4,7 @@ import costaRaw from "@/assets/kit/costa.svg?raw";
 import mangaRaw from "@/assets/kit/manga.svg?raw";
 import golaRaw from "@/assets/kit/gola.svg?raw";
 import shortRaw from "@/assets/kit/short.svg?raw";
-import type { BodyPattern, JerseyDesign, SponsorPosition } from "@/lib/jersey-types";
+import type { BodyPattern, JerseyDesign } from "@/lib/jersey-types";
 import { getStamp } from "@/lib/stamps";
 import {
   VIEW_BOXES,
