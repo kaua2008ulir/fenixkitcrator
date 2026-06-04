@@ -6,33 +6,24 @@ import golaRaw from "@/assets/kit/gola.svg?raw";
 import shortRaw from "@/assets/kit/short.svg?raw";
 import type { BodyPattern, JerseyDesign, SponsorPosition } from "@/lib/jersey-types";
 import { getStamp } from "@/lib/stamps";
+import {
+  VIEW_BOXES,
+  STROKE_W,
+  FRONT_BODY,
+  BACK_BODY,
+  FRONT_SHORT,
+  BACK_SHORT,
+  SLEEVE_CX,
+  BACK_SLEEVE_CX,
+  SPONSOR_BOX,
+  type KitView,
+} from "@/lib/jersey-geometry";
 
 interface Props {
   design: Partial<JerseyDesign>;
-  view: "front" | "back" | "full";
+  view: KitView;
   className?: string;
 }
-
-/**
- * All five source SVGs share the same coordinate space (viewBox 0 0 21000 29700).
- * Front pieces live on the LEFT half, back pieces on the RIGHT half. We crop the
- * viewBox to isolate front / back, or show the whole kit (jersey + shorts).
- */
-const VIEW_BOXES: Record<Props["view"], string> = {
-  front: "200 2300 9400 10900",
-  back: "10600 2300 9400 10900",
-  full: "200 2300 19600 19200",
-};
-
-const STROKE_W = 28;
-
-/** Geometric bounding boxes (computed from the source paths). */
-const FRONT_BODY = { x: 1969, y: 2874, w: 6108, h: 9849, cx: 5023 };
-const BACK_BODY = { x: 12393, y: 2891, w: 6073, h: 9959, cx: 15430 };
-const FRONT_SHORT = { cx: 5355, cy: 14917 };
-const BACK_SHORT = { cx: 15461, cy: 14767 };
-const SLEEVE_CX = 8340;
-const BACK_SLEEVE_CX = 18700;
 
 function escapeXml(s: string) {
   return s
