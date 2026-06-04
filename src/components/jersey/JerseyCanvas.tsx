@@ -284,6 +284,7 @@ export function JerseyCanvas({ design, view, className }: Props) {
     sponsorBack,
     sponsors,
     stampId,
+    stampSvg,
     logoDataUrl,
     crestDataUrl,
     view,
