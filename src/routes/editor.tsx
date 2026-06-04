@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { SiteHeader } from "@/components/SiteShell";
 import { JerseyCanvas } from "@/components/jersey/JerseyCanvas";
+import { SponsorDragLayer } from "@/components/jersey/SponsorDragLayer";
 import {
   DEFAULT_DESIGN,
   PRESETS,
@@ -13,7 +14,7 @@ import {
   type SponsorItem,
   type SponsorPosition,
 } from "@/lib/jersey-types";
-import { STAMPS } from "@/lib/stamps";
+import { STAMPS, fetchDbStamps, type Stamp } from "@/lib/stamps";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -45,19 +46,54 @@ const PATTERNS: Array<{ value: BodyPattern; label: string }> = [
   { value: "checks", label: "Xadrez" },
 ];
 
+/** CSS background that previews a body pattern using the two design colors. */
+function patternBg(value: BodyPattern, c1: string, c2: string): string {
+  switch (value) {
+    case "stripes-v":
+      return `repeating-linear-gradient(90deg, ${c2} 0 8px, ${c1} 8px 16px)`;
+    case "stripes-h":
+      return `repeating-linear-gradient(0deg, ${c2} 0 8px, ${c1} 8px 16px)`;
+    case "sash":
+      return `repeating-linear-gradient(45deg, ${c2} 0 8px, ${c1} 8px 22px)`;
+    case "checks":
+      return `conic-gradient(${c2} 0 25%, ${c1} 0 50%, ${c2} 0 75%, ${c1} 0) 0 0 / 16px 16px`;
+    case "halves":
+      return `linear-gradient(90deg, ${c2} 0 50%, ${c1} 50% 100%)`;
+    default:
+      return c1;
+  }
+}
+
+
 function EditorPage() {
   const [design, setDesign] = useState<JerseyDesign>(DEFAULT_DESIGN);
   const [view, setView] = useState<"front" | "back" | "full">("front");
   const [zoom, setZoom] = useState(1);
   const [saving, setSaving] = useState(false);
   const [name, setName] = useState("Untitled Drop");
+  const [dbStamps, setDbStamps] = useState<Stamp[]>([]);
   const svgWrapRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
+
+  useEffect(() => {
+    fetchDbStamps().then(setDbStamps);
+  }, []);
+
+  const allStamps: Stamp[] = [...STAMPS, ...dbStamps];
 
   const update = <K extends keyof JerseyDesign>(k: K, v: JerseyDesign[K]) =>
     setDesign((d) => ({ ...d, [k]: v }));
 
   const applyPreset = (p: Partial<JerseyDesign>) => setDesign((d) => ({ ...d, ...p }));
+
+  /** Pick a procedural pattern — clears any selected SVG stamp. */
+  const selectPattern = (value: BodyPattern) =>
+    setDesign((d) => ({ ...d, bodyPattern: value, stampId: null, stampSvg: null }));
+
+  /** Pick an SVG stamp — clears the procedural pattern. */
+  const selectStamp = (s: Stamp) =>
+    setDesign((d) => ({ ...d, stampId: s.id, stampSvg: s.svg, bodyPattern: "solid" }));
+
 
   const handleLogo = (file: File) => {
     const reader = new FileReader();
@@ -78,20 +114,30 @@ function EditorPage() {
         id: crypto.randomUUID(),
         imageDataUrl: reader.result as string,
         position: "belly",
+        scale: 1,
+        dx: 0,
+        dy: 0,
       };
       setDesign((d) => ({ ...d, sponsors: [...(d.sponsors ?? []), item] }));
     };
     reader.readAsDataURL(file);
   };
 
-  const updateSponsor = (id: string, position: SponsorPosition) =>
+  /** Patch a single sponsor. Resetting position re-centers it (dx/dy = 0). */
+  const patchSponsor = (id: string, patch: Partial<SponsorItem>) =>
     setDesign((d) => ({
       ...d,
-      sponsors: (d.sponsors ?? []).map((s) => (s.id === id ? { ...s, position } : s)),
+      sponsors: (d.sponsors ?? []).map((s) => (s.id === id ? { ...s, ...patch } : s)),
     }));
+
+  const updateSponsor = (id: string, position: SponsorPosition) =>
+    patchSponsor(id, { position, dx: 0, dy: 0 });
+
+  const moveSponsor = (id: string, dx: number, dy: number) => patchSponsor(id, { dx, dy });
 
   const removeSponsor = (id: string) =>
     setDesign((d) => ({ ...d, sponsors: (d.sponsors ?? []).filter((s) => s.id !== id) }));
+
 
 
 
@@ -184,19 +230,9 @@ function EditorPage() {
             <Section title="Corpo" icon={Shirt}>
               <div className="space-y-4">
                 <ColorRow label="Cor do corpo" value={design.bodyColor} onChange={(v) => update("bodyColor", v)} />
-                <Field label="Padrão">
-                  <Select value={design.bodyPattern} onValueChange={(v) => update("bodyPattern", v as BodyPattern)}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {PATTERNS.map((p) => <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                </Field>
-                {design.bodyPattern !== "solid" && (
-                  <ColorRow label="Cor do padrão" value={design.bodyPatternColor} onChange={(v) => update("bodyPatternColor", v)} />
-                )}
               </div>
             </Section>
+
 
             <Section title="Mangas" icon={Palette}>
               <ColorRow label="Cor das mangas" value={design.sleeveColor} onChange={(v) => update("sleeveColor", v)} />
@@ -305,54 +341,100 @@ function EditorPage() {
               </div>
             </Section>
 
-            <Section title="Estampas" icon={Layers}>
+            <Section title="Estampas & Padrões" icon={Layers}>
               <div className="grid grid-cols-3 gap-2">
-                <button
-                  type="button"
-                  onClick={() => update("stampId", null)}
-                  className={`border p-2 text-[10px] uppercase tracking-widest aspect-square flex items-center justify-center text-center transition-colors ${design.stampId == null ? "border-uv text-uv" : "border-zinc-800 text-zinc-400 hover:border-uv/50"}`}
-                >
-                  Nenhuma
-                </button>
-                {STAMPS.map((s) => (
-                  <button
-                    key={s.id}
-                    type="button"
-                    onClick={() => update("stampId", s.id)}
-                    className={`border p-1 aspect-square overflow-hidden transition-colors ${design.stampId === s.id ? "border-uv" : "border-zinc-800 hover:border-uv/50"}`}
-                    title={s.name}
-                  >
-                    <div
-                      className="w-full h-full text-uv"
-                      dangerouslySetInnerHTML={{ __html: s.svg }}
-                    />
-                  </button>
-                ))}
+                {PATTERNS.map((p) => {
+                  const active = design.stampId == null && design.bodyPattern === p.value;
+                  return (
+                    <button
+                      key={p.value}
+                      type="button"
+                      onClick={() => selectPattern(p.value)}
+                      className={`group border p-1.5 transition-colors ${active ? "border-uv" : "border-zinc-800 hover:border-uv/50"}`}
+                      title={p.label}
+                    >
+                      <div
+                        className="aspect-square mb-1.5 border border-zinc-900"
+                        style={{ background: patternBg(p.value, design.bodyColor, design.bodyPatternColor) }}
+                      />
+                      <div className={`text-[9px] uppercase tracking-widest text-center truncate ${active ? "text-uv" : "text-zinc-400"}`}>
+                        {p.label}
+                      </div>
+                    </button>
+                  );
+                })}
+                {allStamps.map((s) => {
+                  const active = design.stampId === s.id;
+                  return (
+                    <button
+                      key={s.id}
+                      type="button"
+                      onClick={() => selectStamp(s)}
+                      className={`group border p-1.5 transition-colors ${active ? "border-uv" : "border-zinc-800 hover:border-uv/50"}`}
+                      title={s.name}
+                    >
+                      <div
+                        className="aspect-square mb-1.5 border border-zinc-900 overflow-hidden text-uv [&>svg]:w-full [&>svg]:h-full"
+                        dangerouslySetInnerHTML={{ __html: s.svg }}
+                      />
+                      <div className={`text-[9px] uppercase tracking-widest text-center truncate ${active ? "text-uv" : "text-zinc-400"}`}>
+                        {s.name}
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
-              {STAMPS.length === 0 && (
-                <p className="text-[10px] text-zinc-600 mt-2">Nenhuma estampa cadastrada ainda.</p>
+              {design.stampId == null && design.bodyPattern !== "solid" && (
+                <div className="mt-4">
+                  <ColorRow label="Cor do padrão" value={design.bodyPatternColor} onChange={(v) => update("bodyPatternColor", v)} />
+                </div>
               )}
             </Section>
 
+
             <Section title="Patrocínios (imagens)" icon={Plus}>
               <p className="text-[10px] text-zinc-500 mb-3 leading-relaxed">
-                Envie quantos patrocínios quiser e escolha o lugar de cada um.
+                Envie quantos patrocínios quiser, escolha o lugar, ajuste o tamanho e
+                <span className="text-uv"> arraste direto na camisa</span> pra posicionar.
               </p>
               <div className="space-y-3">
                 {(design.sponsors ?? []).map((s) => (
-                  <div key={s.id} className="flex items-center gap-2 border border-zinc-800 p-2">
-                    <div className="size-10 shrink-0 bg-concrete border border-zinc-800 overflow-hidden flex items-center justify-center">
-                      <img src={s.imageDataUrl} alt="patrocínio" className="max-w-full max-h-full object-contain" />
+                  <div key={s.id} className="space-y-2 border border-zinc-800 p-2">
+                    <div className="flex items-center gap-2">
+                      <div className="size-10 shrink-0 bg-concrete border border-zinc-800 overflow-hidden flex items-center justify-center">
+                        <img src={s.imageDataUrl} alt="patrocínio" className="max-w-full max-h-full object-contain" />
+                      </div>
+                      <Select value={s.position} onValueChange={(v) => updateSponsor(s.id, v as SponsorPosition)}>
+                        <SelectTrigger className="flex-1 h-8 text-xs"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {SPONSOR_POSITIONS.map((p) => <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                      <Button size="icon" variant="ghost" onClick={() => removeSponsor(s.id)}>
+                        <Trash2 className="size-4 text-zinc-400" />
+                      </Button>
                     </div>
-                    <Select value={s.position} onValueChange={(v) => updateSponsor(s.id, v as SponsorPosition)}>
-                      <SelectTrigger className="flex-1 h-8 text-xs"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        {SPONSOR_POSITIONS.map((p) => <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
-                    <Button size="icon" variant="ghost" onClick={() => removeSponsor(s.id)}>
-                      <Trash2 className="size-4 text-zinc-400" />
-                    </Button>
+                    <div className="flex items-center gap-2">
+                      <Label className="text-[9px] uppercase tracking-widest text-zinc-500 font-bold w-14">Tamanho</Label>
+                      <Slider
+                        value={[s.scale ?? 1]}
+                        min={0.4}
+                        max={2.5}
+                        step={0.05}
+                        onValueChange={(v) => patchSponsor(s.id, { scale: v[0] })}
+                        className="flex-1"
+                      />
+                      <span className="text-[10px] text-zinc-500 tabular-nums w-8">{Math.round((s.scale ?? 1) * 100)}%</span>
+                    </div>
+                    {((s.dx ?? 0) !== 0 || (s.dy ?? 0) !== 0) && (
+                      <button
+                        type="button"
+                        onClick={() => patchSponsor(s.id, { dx: 0, dy: 0 })}
+                        className="text-[9px] uppercase tracking-widest text-zinc-500 hover:text-uv"
+                      >
+                        ↺ Recentralizar posição
+                      </button>
+                    )}
                   </div>
                 ))}
                 <label className="cursor-pointer flex items-center justify-center gap-2 border border-dashed border-zinc-800 hover:border-uv/50 px-3 py-2 text-xs uppercase tracking-widest text-zinc-400 hover:text-uv transition-colors">
@@ -369,6 +451,7 @@ function EditorPage() {
                 </label>
               </div>
             </Section>
+
           </div>
 
           <div className="mt-8 grid grid-cols-2 gap-2">
@@ -421,11 +504,15 @@ function EditorPage() {
               className="w-full h-full flex items-center justify-center"
               style={{ transform: `scale(${zoom})`, transition: "transform 0.2s" }}
             >
-              <JerseyCanvas
-                design={design}
-                view={view}
-                className="w-full h-full max-h-full flex items-center justify-center drop-shadow-[0_30px_50px_rgba(208,0,255,0.25)]"
-              />
+              <div className="relative w-full h-full flex items-center justify-center">
+                <JerseyCanvas
+                  design={design}
+                  view={view}
+                  className="w-full h-full max-h-full flex items-center justify-center drop-shadow-[0_30px_50px_rgba(208,0,255,0.25)]"
+                />
+                <SponsorDragLayer design={design} view={view} onMove={moveSponsor} />
+              </div>
+
             </div>
           </div>
         </section>

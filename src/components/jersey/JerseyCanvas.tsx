@@ -4,35 +4,26 @@ import costaRaw from "@/assets/kit/costa.svg?raw";
 import mangaRaw from "@/assets/kit/manga.svg?raw";
 import golaRaw from "@/assets/kit/gola.svg?raw";
 import shortRaw from "@/assets/kit/short.svg?raw";
-import type { BodyPattern, JerseyDesign, SponsorPosition } from "@/lib/jersey-types";
+import type { BodyPattern, JerseyDesign } from "@/lib/jersey-types";
 import { getStamp } from "@/lib/stamps";
+import {
+  VIEW_BOXES,
+  STROKE_W,
+  FRONT_BODY,
+  BACK_BODY,
+  FRONT_SHORT,
+  BACK_SHORT,
+  SLEEVE_CX,
+  BACK_SLEEVE_CX,
+  SPONSOR_BOX,
+  type KitView,
+} from "@/lib/jersey-geometry";
 
 interface Props {
   design: Partial<JerseyDesign>;
-  view: "front" | "back" | "full";
+  view: KitView;
   className?: string;
 }
-
-/**
- * All five source SVGs share the same coordinate space (viewBox 0 0 21000 29700).
- * Front pieces live on the LEFT half, back pieces on the RIGHT half. We crop the
- * viewBox to isolate front / back, or show the whole kit (jersey + shorts).
- */
-const VIEW_BOXES: Record<Props["view"], string> = {
-  front: "200 2300 9400 10900",
-  back: "10600 2300 9400 10900",
-  full: "200 2300 19600 19200",
-};
-
-const STROKE_W = 28;
-
-/** Geometric bounding boxes (computed from the source paths). */
-const FRONT_BODY = { x: 1969, y: 2874, w: 6108, h: 9849, cx: 5023 };
-const BACK_BODY = { x: 12393, y: 2891, w: 6073, h: 9959, cx: 15430 };
-const FRONT_SHORT = { cx: 5355, cy: 14917 };
-const BACK_SHORT = { cx: 15461, cy: 14767 };
-const SLEEVE_CX = 8340;
-const BACK_SLEEVE_CX = 18700;
 
 function escapeXml(s: string) {
   return s
@@ -116,14 +107,6 @@ function imgEl(href: string, cx: number, cy: number, w: number, h: number) {
   return `<image href="${href}" x="${cx - w / 2}" y="${cy - h / 2}" width="${w}" height="${h}" preserveAspectRatio="xMidYMid meet"/>`;
 }
 
-/** Placement boxes for image sponsors (cx, cy, w, h) + which view group renders it. */
-const SPONSOR_BOX: Record<SponsorPosition, { cx: number; cy: number; w: number; h: number; group: "front" | "back" | "full" }> = {
-  belly: { cx: FRONT_BODY.cx, cy: 9000, w: 3800, h: 1700, group: "front" },
-  sleeve: { cx: SLEEVE_CX, cy: 5000, w: 1600, h: 1100, group: "front" },
-  "back-top": { cx: BACK_BODY.cx, cy: 3700, w: 3400, h: 1500, group: "back" },
-  "back-bottom": { cx: BACK_BODY.cx, cy: 10800, w: 2900, h: 1500, group: "back" },
-  "shorts-back": { cx: BACK_SHORT.cx, cy: 15400, w: 1700, h: 1700, group: "full" },
-};
 
 export function JerseyCanvas({ design, view, className }: Props) {
   const {
@@ -146,13 +129,14 @@ export function JerseyCanvas({ design, view, className }: Props) {
     sponsorBack = "",
     sponsors = [],
     stampId = null,
+    stampSvg = null,
     logoDataUrl = null,
     crestDataUrl = null,
   } = design;
 
   const svgString = useMemo(() => {
     const pat = patternDefs(bodyPattern, bodyPatternColor);
-    const stamp = getStamp(stampId);
+    const stampMarkup = stampSvg ?? getStamp(stampId)?.svg ?? null;
 
     // Which body shapes to draw: front-only, back-only, or both (full kit).
     const bodySources = view === "full" ? [frenteRaw, costaRaw] : view === "back" ? [costaRaw] : [frenteRaw];
@@ -169,8 +153,8 @@ export function JerseyCanvas({ design, view, className }: Props) {
 
     // Stamp / print overlay clipped to the body shape.
     let stampLayer = "";
-    if (stamp) {
-      const href = `data:image/svg+xml;utf8,${encodeURIComponent(stamp.svg)}`;
+    if (stampMarkup) {
+      const href = `data:image/svg+xml;utf8,${encodeURIComponent(stampMarkup)}`;
       const boxes = view === "full" ? [FRONT_BODY, BACK_BODY] : view === "back" ? [BACK_BODY] : [FRONT_BODY];
       stampLayer = `<g clip-path="url(#body-clip)">${boxes
         .map((b) => `<image href="${href}" x="${b.x}" y="${b.y}" width="${b.w}" height="${b.h}" preserveAspectRatio="xMidYMid slice"/>`)
@@ -193,12 +177,16 @@ export function JerseyCanvas({ design, view, className }: Props) {
         .filter((s) => s.imageDataUrl && SPONSOR_BOX[s.position].group === group)
         .forEach((s) => {
           const b = SPONSOR_BOX[s.position];
-          overlay.push(imgEl(s.imageDataUrl, b.cx, b.cy, b.w, b.h));
+          const scale = s.scale ?? 1;
+          const dx = s.dx ?? 0;
+          const dy = s.dy ?? 0;
+          overlay.push(imgEl(s.imageDataUrl, b.cx + dx, b.cy + dy, b.w * scale, b.h * scale));
           // sleeve sponsor mirrors onto the back sleeve when both are visible
           if (s.position === "sleeve" && view !== "front") {
-            overlay.push(imgEl(s.imageDataUrl, BACK_SLEEVE_CX, b.cy, b.w, b.h));
+            overlay.push(imgEl(s.imageDataUrl, BACK_SLEEVE_CX + dx, b.cy + dy, b.w * scale, b.h * scale));
           }
         });
+
 
     if (view !== "back") {
       // Team logo on the left of the chest
@@ -296,6 +284,7 @@ export function JerseyCanvas({ design, view, className }: Props) {
     sponsorBack,
     sponsors,
     stampId,
+    stampSvg,
     logoDataUrl,
     crestDataUrl,
     view,

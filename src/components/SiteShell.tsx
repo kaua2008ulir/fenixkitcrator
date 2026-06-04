@@ -1,10 +1,12 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { useAuth } from "@/lib/auth-context";
+import { useIsAdmin } from "@/lib/use-admin";
 import { Button } from "@/components/ui/button";
 import { LogOut, User as UserIcon } from "lucide-react";
 
 export function SiteHeader() {
   const { user, signOut } = useAuth();
+  const { isAdmin } = useIsAdmin();
   const path = useRouterState({ select: (s) => s.location.pathname });
 
   const navLink = (to: string, label: string) => (
@@ -33,7 +35,9 @@ export function SiteHeader() {
           {navLink("/editor", "Editor")}
           {navLink("/galeria", "Galeria")}
           {user && navLink("/designs", "Meus Designs")}
+          {isAdmin && navLink("/admin/estampas", "Estampas")}
         </nav>
+
 
         <div className="flex items-center gap-2">
           {user ? (

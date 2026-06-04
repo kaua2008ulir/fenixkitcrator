@@ -14,6 +14,7 @@ import { Route as GaleriaRouteImport } from './routes/galeria'
 import { Route as EditorRouteImport } from './routes/editor'
 import { Route as DesignsRouteImport } from './routes/designs'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AdminEstampasRouteImport } from './routes/admin.estampas'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
@@ -40,6 +41,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminEstampasRoute = AdminEstampasRouteImport.update({
+  id: '/admin/estampas',
+  path: '/admin/estampas',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -47,6 +53,7 @@ export interface FileRoutesByFullPath {
   '/editor': typeof EditorRoute
   '/galeria': typeof GaleriaRoute
   '/login': typeof LoginRoute
+  '/admin/estampas': typeof AdminEstampasRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -54,6 +61,7 @@ export interface FileRoutesByTo {
   '/editor': typeof EditorRoute
   '/galeria': typeof GaleriaRoute
   '/login': typeof LoginRoute
+  '/admin/estampas': typeof AdminEstampasRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -62,13 +70,27 @@ export interface FileRoutesById {
   '/editor': typeof EditorRoute
   '/galeria': typeof GaleriaRoute
   '/login': typeof LoginRoute
+  '/admin/estampas': typeof AdminEstampasRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/designs' | '/editor' | '/galeria' | '/login'
+  fullPaths:
+    | '/'
+    | '/designs'
+    | '/editor'
+    | '/galeria'
+    | '/login'
+    | '/admin/estampas'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/designs' | '/editor' | '/galeria' | '/login'
-  id: '__root__' | '/' | '/designs' | '/editor' | '/galeria' | '/login'
+  to: '/' | '/designs' | '/editor' | '/galeria' | '/login' | '/admin/estampas'
+  id:
+    | '__root__'
+    | '/'
+    | '/designs'
+    | '/editor'
+    | '/galeria'
+    | '/login'
+    | '/admin/estampas'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -77,6 +99,7 @@ export interface RootRouteChildren {
   EditorRoute: typeof EditorRoute
   GaleriaRoute: typeof GaleriaRoute
   LoginRoute: typeof LoginRoute
+  AdminEstampasRoute: typeof AdminEstampasRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -116,6 +139,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/estampas': {
+      id: '/admin/estampas'
+      path: '/admin/estampas'
+      fullPath: '/admin/estampas'
+      preLoaderRoute: typeof AdminEstampasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -125,6 +155,7 @@ const rootRouteChildren: RootRouteChildren = {
   EditorRoute: EditorRoute,
   GaleriaRoute: GaleriaRoute,
   LoginRoute: LoginRoute,
+  AdminEstampasRoute: AdminEstampasRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

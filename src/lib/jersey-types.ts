@@ -12,6 +12,12 @@ export interface SponsorItem {
   imageDataUrl: string;
   /** Where this sponsor is printed */
   position: SponsorPosition;
+  /** Size multiplier relative to the slot's base box (1 = default) */
+  scale?: number;
+  /** Horizontal offset from the slot center, in SVG units (drag) */
+  dx?: number;
+  /** Vertical offset from the slot center, in SVG units (drag) */
+  dy?: number;
 }
 
 export const SPONSOR_POSITIONS: Array<{ value: SponsorPosition; label: string }> = [
@@ -65,8 +71,10 @@ export interface JerseyDesign {
   sponsorBack: string;
   /** Image-based sponsors with their own placement */
   sponsors: SponsorItem[];
-  /** Selected SVG stamp / print applied to the body (id from the stamp registry) */
+  /** Selected SVG stamp / print applied to the body (id from the stamp registry or DB) */
   stampId: string | null;
+  /** Raw SVG markup of the selected stamp — kept in the design so saved kits render anywhere */
+  stampSvg?: string | null;
   /** Uploaded team logo (data URL) shown on one side of the chest */
   logoDataUrl: string | null;
   /** Uploaded crest / escudo (data URL) — auto-placed on chest + shorts */
@@ -93,6 +101,7 @@ export const DEFAULT_DESIGN: JerseyDesign = {
   sponsorBack: "",
   sponsors: [],
   stampId: null,
+  stampSvg: null,
   logoDataUrl: null,
   crestDataUrl: null,
 };
