@@ -107,14 +107,6 @@ function imgEl(href: string, cx: number, cy: number, w: number, h: number) {
   return `<image href="${href}" x="${cx - w / 2}" y="${cy - h / 2}" width="${w}" height="${h}" preserveAspectRatio="xMidYMid meet"/>`;
 }
 
-/** Placement boxes for image sponsors (cx, cy, w, h) + which view group renders it. */
-const SPONSOR_BOX: Record<SponsorPosition, { cx: number; cy: number; w: number; h: number; group: "front" | "back" | "full" }> = {
-  belly: { cx: FRONT_BODY.cx, cy: 9000, w: 3800, h: 1700, group: "front" },
-  sleeve: { cx: SLEEVE_CX, cy: 5000, w: 1600, h: 1100, group: "front" },
-  "back-top": { cx: BACK_BODY.cx, cy: 3700, w: 3400, h: 1500, group: "back" },
-  "back-bottom": { cx: BACK_BODY.cx, cy: 10800, w: 2900, h: 1500, group: "back" },
-  "shorts-back": { cx: BACK_SHORT.cx, cy: 15400, w: 1700, h: 1700, group: "full" },
-};
 
 export function JerseyCanvas({ design, view, className }: Props) {
   const {
