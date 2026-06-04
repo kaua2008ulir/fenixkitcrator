@@ -114,20 +114,30 @@ function EditorPage() {
         id: crypto.randomUUID(),
         imageDataUrl: reader.result as string,
         position: "belly",
+        scale: 1,
+        dx: 0,
+        dy: 0,
       };
       setDesign((d) => ({ ...d, sponsors: [...(d.sponsors ?? []), item] }));
     };
     reader.readAsDataURL(file);
   };
 
-  const updateSponsor = (id: string, position: SponsorPosition) =>
+  /** Patch a single sponsor. Resetting position re-centers it (dx/dy = 0). */
+  const patchSponsor = (id: string, patch: Partial<SponsorItem>) =>
     setDesign((d) => ({
       ...d,
-      sponsors: (d.sponsors ?? []).map((s) => (s.id === id ? { ...s, position } : s)),
+      sponsors: (d.sponsors ?? []).map((s) => (s.id === id ? { ...s, ...patch } : s)),
     }));
+
+  const updateSponsor = (id: string, position: SponsorPosition) =>
+    patchSponsor(id, { position, dx: 0, dy: 0 });
+
+  const moveSponsor = (id: string, dx: number, dy: number) => patchSponsor(id, { dx, dy });
 
   const removeSponsor = (id: string) =>
     setDesign((d) => ({ ...d, sponsors: (d.sponsors ?? []).filter((s) => s.id !== id) }));
+
 
 
 
