@@ -2,15 +2,14 @@
  * Stamp / print registry.
  *
  * ─────────────────────────────────────────────────────────────────────────
- *  COMO ADICIONAR UMA NOVA ESTAMPA (somente o dono do projeto):
- *  1. Coloque um arquivo `.svg` dentro da pasta `src/assets/stamps/`.
- *  2. O nome do arquivo vira o nome da estampa (ex.: `chevron-up.svg` → "Chevron Up").
- *  3. Pronto — ela aparece automaticamente no editor, de forma permanente.
- *
- *  Nenhum cliente consegue adicionar estampas: elas só entram editando o
- *  código (acesso que só você tem).
+ *  Estampas vêm de DOIS lugares:
+ *  1. Embutidas no código: arquivos `.svg` em `src/assets/stamps/` (abaixo).
+ *  2. Cadastradas pelo administrador na página /admin/estampas — ficam salvas
+ *     no banco e aparecem pra todos os clientes, de forma permanente.
  * ─────────────────────────────────────────────────────────────────────────
  */
+import { supabase } from "@/integrations/supabase/client";
+
 const modules = import.meta.glob("../assets/stamps/*.svg", {
   eager: true,
   query: "?raw",
@@ -33,3 +32,13 @@ export const STAMPS: Stamp[] = Object.entries(modules)
 
 export const getStamp = (id: string | null): Stamp | null =>
   id ? STAMPS.find((s) => s.id === id) ?? null : null;
+
+/** Fetch the admin-managed stamps stored in the database. */
+export async function fetchDbStamps(): Promise<Stamp[]> {
+  const { data, error } = await supabase
+    .from("stamps")
+    .select("id, name, svg")
+    .order("created_at", { ascending: false });
+  if (error || !data) return [];
+  return data as Stamp[];
+}
