@@ -101,6 +101,7 @@ export const DEFAULT_DESIGN: JerseyDesign = {
   sponsorBack: "",
   sponsors: [],
   stampId: null,
+  stampSvg: null,
   logoDataUrl: null,
   crestDataUrl: null,
 };
