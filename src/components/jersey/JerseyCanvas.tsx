@@ -153,8 +153,8 @@ export function JerseyCanvas({ design, view, className }: Props) {
 
     // Stamp / print overlay clipped to the body shape.
     let stampLayer = "";
-    if (stamp) {
-      const href = `data:image/svg+xml;utf8,${encodeURIComponent(stamp.svg)}`;
+    if (stampMarkup) {
+      const href = `data:image/svg+xml;utf8,${encodeURIComponent(stampMarkup)}`;
       const boxes = view === "full" ? [FRONT_BODY, BACK_BODY] : view === "back" ? [BACK_BODY] : [FRONT_BODY];
       stampLayer = `<g clip-path="url(#body-clip)">${boxes
         .map((b) => `<image href="${href}" x="${b.x}" y="${b.y}" width="${b.w}" height="${b.h}" preserveAspectRatio="xMidYMid slice"/>`)
