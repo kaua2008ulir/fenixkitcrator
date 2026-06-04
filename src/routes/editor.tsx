@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { SiteHeader } from "@/components/SiteShell";
 import { JerseyCanvas } from "@/components/jersey/JerseyCanvas";
+import { SponsorDragLayer } from "@/components/jersey/SponsorDragLayer";
 import {
   DEFAULT_DESIGN,
   PRESETS,
@@ -13,7 +14,7 @@ import {
   type SponsorItem,
   type SponsorPosition,
 } from "@/lib/jersey-types";
-import { STAMPS } from "@/lib/stamps";
+import { STAMPS, fetchDbStamps, type Stamp } from "@/lib/stamps";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -44,6 +45,25 @@ const PATTERNS: Array<{ value: BodyPattern; label: string }> = [
   { value: "halves", label: "Metades" },
   { value: "checks", label: "Xadrez" },
 ];
+
+/** CSS background that previews a body pattern using the two design colors. */
+function patternBg(value: BodyPattern, c1: string, c2: string): string {
+  switch (value) {
+    case "stripes-v":
+      return `repeating-linear-gradient(90deg, ${c2} 0 8px, ${c1} 8px 16px)`;
+    case "stripes-h":
+      return `repeating-linear-gradient(0deg, ${c2} 0 8px, ${c1} 8px 16px)`;
+    case "sash":
+      return `repeating-linear-gradient(45deg, ${c2} 0 8px, ${c1} 8px 22px)`;
+    case "checks":
+      return `conic-gradient(${c2} 0 25%, ${c1} 0 50%, ${c2} 0 75%, ${c1} 0) 0 0 / 16px 16px`;
+    case "halves":
+      return `linear-gradient(90deg, ${c2} 0 50%, ${c1} 50% 100%)`;
+    default:
+      return c1;
+  }
+}
+
 
 function EditorPage() {
   const [design, setDesign] = useState<JerseyDesign>(DEFAULT_DESIGN);
