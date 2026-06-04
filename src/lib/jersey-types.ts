@@ -71,8 +71,10 @@ export interface JerseyDesign {
   sponsorBack: string;
   /** Image-based sponsors with their own placement */
   sponsors: SponsorItem[];
-  /** Selected SVG stamp / print applied to the body (id from the stamp registry) */
+  /** Selected SVG stamp / print applied to the body (id from the stamp registry or DB) */
   stampId: string | null;
+  /** Raw SVG markup of the selected stamp — kept in the design so saved kits render anywhere */
+  stampSvg?: string | null;
   /** Uploaded team logo (data URL) shown on one side of the chest */
   logoDataUrl: string | null;
   /** Uploaded crest / escudo (data URL) — auto-placed on chest + shorts */
