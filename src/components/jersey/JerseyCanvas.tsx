@@ -177,12 +177,16 @@ export function JerseyCanvas({ design, view, className }: Props) {
         .filter((s) => s.imageDataUrl && SPONSOR_BOX[s.position].group === group)
         .forEach((s) => {
           const b = SPONSOR_BOX[s.position];
-          overlay.push(imgEl(s.imageDataUrl, b.cx, b.cy, b.w, b.h));
+          const scale = s.scale ?? 1;
+          const dx = s.dx ?? 0;
+          const dy = s.dy ?? 0;
+          overlay.push(imgEl(s.imageDataUrl, b.cx + dx, b.cy + dy, b.w * scale, b.h * scale));
           // sleeve sponsor mirrors onto the back sleeve when both are visible
           if (s.position === "sleeve" && view !== "front") {
-            overlay.push(imgEl(s.imageDataUrl, BACK_SLEEVE_CX, b.cy, b.w, b.h));
+            overlay.push(imgEl(s.imageDataUrl, BACK_SLEEVE_CX + dx, b.cy + dy, b.w * scale, b.h * scale));
           }
         });
+
 
     if (view !== "back") {
       // Team logo on the left of the chest
