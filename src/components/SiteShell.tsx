@@ -35,7 +35,9 @@ export function SiteHeader() {
           {navLink("/editor", "Editor")}
           {navLink("/galeria", "Galeria")}
           {user && navLink("/designs", "Meus Designs")}
+          {isAdmin && navLink("/admin/estampas", "Estampas")}
         </nav>
+
 
         <div className="flex items-center gap-2">
           {user ? (
