@@ -12,6 +12,12 @@ export interface SponsorItem {
   imageDataUrl: string;
   /** Where this sponsor is printed */
   position: SponsorPosition;
+  /** Size multiplier relative to the slot's base box (1 = default) */
+  scale?: number;
+  /** Horizontal offset from the slot center, in SVG units (drag) */
+  dx?: number;
+  /** Vertical offset from the slot center, in SVG units (drag) */
+  dy?: number;
 }
 
 export const SPONSOR_POSITIONS: Array<{ value: SponsorPosition; label: string }> = [
