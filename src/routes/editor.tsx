@@ -71,13 +71,29 @@ function EditorPage() {
   const [zoom, setZoom] = useState(1);
   const [saving, setSaving] = useState(false);
   const [name, setName] = useState("Untitled Drop");
+  const [dbStamps, setDbStamps] = useState<Stamp[]>([]);
   const svgWrapRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
+
+  useEffect(() => {
+    fetchDbStamps().then(setDbStamps);
+  }, []);
+
+  const allStamps: Stamp[] = [...STAMPS, ...dbStamps];
 
   const update = <K extends keyof JerseyDesign>(k: K, v: JerseyDesign[K]) =>
     setDesign((d) => ({ ...d, [k]: v }));
 
   const applyPreset = (p: Partial<JerseyDesign>) => setDesign((d) => ({ ...d, ...p }));
+
+  /** Pick a procedural pattern — clears any selected SVG stamp. */
+  const selectPattern = (value: BodyPattern) =>
+    setDesign((d) => ({ ...d, bodyPattern: value, stampId: null, stampSvg: null }));
+
+  /** Pick an SVG stamp — clears the procedural pattern. */
+  const selectStamp = (s: Stamp) =>
+    setDesign((d) => ({ ...d, stampId: s.id, stampSvg: s.svg, bodyPattern: "solid" }));
+
 
   const handleLogo = (file: File) => {
     const reader = new FileReader();
