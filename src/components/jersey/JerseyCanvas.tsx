@@ -136,7 +136,7 @@ export function JerseyCanvas({ design, view, className }: Props) {
 
   const svgString = useMemo(() => {
     const pat = patternDefs(bodyPattern, bodyPatternColor);
-    const stamp = getStamp(stampId);
+    const stampMarkup = stampSvg ?? getStamp(stampId)?.svg ?? null;
 
     // Which body shapes to draw: front-only, back-only, or both (full kit).
     const bodySources = view === "full" ? [frenteRaw, costaRaw] : view === "back" ? [costaRaw] : [frenteRaw];
