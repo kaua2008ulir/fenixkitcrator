@@ -230,19 +230,9 @@ function EditorPage() {
             <Section title="Corpo" icon={Shirt}>
               <div className="space-y-4">
                 <ColorRow label="Cor do corpo" value={design.bodyColor} onChange={(v) => update("bodyColor", v)} />
-                <Field label="Padrão">
-                  <Select value={design.bodyPattern} onValueChange={(v) => update("bodyPattern", v as BodyPattern)}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {PATTERNS.map((p) => <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                </Field>
-                {design.bodyPattern !== "solid" && (
-                  <ColorRow label="Cor do padrão" value={design.bodyPatternColor} onChange={(v) => update("bodyPatternColor", v)} />
-                )}
               </div>
             </Section>
+
 
             <Section title="Mangas" icon={Palette}>
               <ColorRow label="Cor das mangas" value={design.sleeveColor} onChange={(v) => update("sleeveColor", v)} />
