@@ -129,6 +129,7 @@ export function JerseyCanvas({ design, view, className }: Props) {
     sponsorBack = "",
     sponsors = [],
     stampId = null,
+    stampSvg = null,
     logoDataUrl = null,
     crestDataUrl = null,
   } = design;
