@@ -341,34 +341,56 @@ function EditorPage() {
               </div>
             </Section>
 
-            <Section title="Estampas" icon={Layers}>
+            <Section title="Estampas & Padrões" icon={Layers}>
               <div className="grid grid-cols-3 gap-2">
-                <button
-                  type="button"
-                  onClick={() => update("stampId", null)}
-                  className={`border p-2 text-[10px] uppercase tracking-widest aspect-square flex items-center justify-center text-center transition-colors ${design.stampId == null ? "border-uv text-uv" : "border-zinc-800 text-zinc-400 hover:border-uv/50"}`}
-                >
-                  Nenhuma
-                </button>
-                {STAMPS.map((s) => (
-                  <button
-                    key={s.id}
-                    type="button"
-                    onClick={() => update("stampId", s.id)}
-                    className={`border p-1 aspect-square overflow-hidden transition-colors ${design.stampId === s.id ? "border-uv" : "border-zinc-800 hover:border-uv/50"}`}
-                    title={s.name}
-                  >
-                    <div
-                      className="w-full h-full text-uv"
-                      dangerouslySetInnerHTML={{ __html: s.svg }}
-                    />
-                  </button>
-                ))}
+                {PATTERNS.map((p) => {
+                  const active = design.stampId == null && design.bodyPattern === p.value;
+                  return (
+                    <button
+                      key={p.value}
+                      type="button"
+                      onClick={() => selectPattern(p.value)}
+                      className={`group border p-1.5 transition-colors ${active ? "border-uv" : "border-zinc-800 hover:border-uv/50"}`}
+                      title={p.label}
+                    >
+                      <div
+                        className="aspect-square mb-1.5 border border-zinc-900"
+                        style={{ background: patternBg(p.value, design.bodyColor, design.bodyPatternColor) }}
+                      />
+                      <div className={`text-[9px] uppercase tracking-widest text-center truncate ${active ? "text-uv" : "text-zinc-400"}`}>
+                        {p.label}
+                      </div>
+                    </button>
+                  );
+                })}
+                {allStamps.map((s) => {
+                  const active = design.stampId === s.id;
+                  return (
+                    <button
+                      key={s.id}
+                      type="button"
+                      onClick={() => selectStamp(s)}
+                      className={`group border p-1.5 transition-colors ${active ? "border-uv" : "border-zinc-800 hover:border-uv/50"}`}
+                      title={s.name}
+                    >
+                      <div
+                        className="aspect-square mb-1.5 border border-zinc-900 overflow-hidden text-uv [&>svg]:w-full [&>svg]:h-full"
+                        dangerouslySetInnerHTML={{ __html: s.svg }}
+                      />
+                      <div className={`text-[9px] uppercase tracking-widest text-center truncate ${active ? "text-uv" : "text-zinc-400"}`}>
+                        {s.name}
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
-              {STAMPS.length === 0 && (
-                <p className="text-[10px] text-zinc-600 mt-2">Nenhuma estampa cadastrada ainda.</p>
+              {design.stampId == null && design.bodyPattern !== "solid" && (
+                <div className="mt-4">
+                  <ColorRow label="Cor do padrão" value={design.bodyPatternColor} onChange={(v) => update("bodyPatternColor", v)} />
+                </div>
               )}
             </Section>
+
 
             <Section title="Patrocínios (imagens)" icon={Plus}>
               <p className="text-[10px] text-zinc-500 mb-3 leading-relaxed">
